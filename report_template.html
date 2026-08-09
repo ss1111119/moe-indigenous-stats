@@ -1,4 +1,11 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>大專科系裡的原住民學生</title>
+<meta name="description" content="原住民學生與一般生在大專科系的結構差異與 106–114 學年增減趨勢。資料來源：教育部統計處。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>%F0%9F%93%8A</text></svg>">
 <style>
 :root{
   color-scheme: light;
@@ -39,8 +46,8 @@ body{
   font-family:system-ui,-apple-system,"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;
   font-size:16px; line-height:1.7; -webkit-font-smoothing:antialiased;
 }
-.mono{font-family:ui-monospace,"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace}
 .wrap{max-width:1060px; margin:0 auto; padding:0 24px}
+:focus-visible{outline:2px solid var(--ind); outline-offset:2px}
 
 /* ---------- header ---------- */
 header{border-bottom:1px solid var(--rule); background:var(--surface)}
@@ -49,18 +56,16 @@ header{border-bottom:1px solid var(--rule); background:var(--surface)}
   font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;
   font-size:12px; letter-spacing:.14em; color:var(--muted); text-transform:uppercase;
 }
-h1{
-  margin:0; font-size:clamp(30px,5.2vw,46px); line-height:1.15; font-weight:680;
-  letter-spacing:-.02em; text-wrap:balance; max-width:18em;
-}
+h1{margin:0; font-size:clamp(30px,5.2vw,46px); line-height:1.15; font-weight:680;
+  letter-spacing:-.02em; text-wrap:balance; max-width:18em}
 .deck{margin:0; max-width:40em; color:var(--ink-2); font-size:17.5px}
-.byline{
-  display:flex; flex-wrap:wrap; gap:6px 20px; font-size:13px; color:var(--muted);
-  font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;
-}
+.byline{display:flex; flex-wrap:wrap; gap:6px 20px; font-size:13px; color:var(--muted);
+  font-family:ui-monospace,"Cascadia Mono",Consolas,monospace}
+.byline a{color:var(--ink-2)}
 
 /* ---------- kpi ---------- */
-.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:1px; background:var(--rule); border:1px solid var(--rule); margin-top:8px}
+.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:1px;
+  background:var(--rule); border:1px solid var(--rule); margin-top:8px}
 .kpi{background:var(--surface); padding:20px 22px; display:flex; flex-direction:column; gap:5px}
 .kpi .k{font-size:12px; letter-spacing:.1em; color:var(--muted); font-family:ui-monospace,Consolas,monospace}
 .kpi .v{font-size:31px; font-weight:640; line-height:1.1; letter-spacing:-.02em}
@@ -77,18 +82,34 @@ h2{margin:0; font-size:clamp(21px,3vw,27px); font-weight:640; letter-spacing:-.0
 .note{margin:0; max-width:44em; color:var(--ink-2); font-size:15.5px}
 .card{background:var(--surface); border:1px solid var(--rule); padding:22px 22px 18px}
 
+/* ---------- filter bar ---------- */
+.filter{position:sticky; top:0; z-index:20; background:var(--page);
+  border-bottom:1px solid var(--rule); padding:10px 0}
+.filter .inner{max-width:1060px; margin:0 auto; padding:0 24px;
+  display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px}
+.filter .lbl{font-size:12px; letter-spacing:.1em; color:var(--muted);
+  font-family:ui-monospace,Consolas,monospace}
+.seg{display:flex; flex-wrap:wrap; gap:1px; background:var(--rule); border:1px solid var(--rule)}
+.seg button{
+  appearance:none; border:0; background:var(--surface); color:var(--ink-2); cursor:pointer;
+  font:inherit; font-size:13.5px; padding:5px 13px; line-height:1.5;
+}
+.seg button:hover{background:var(--surface-2); color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ind); color:#fff; font-weight:600}
+.filter .cnt{font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums;
+  font-family:ui-monospace,Consolas,monospace}
+
 /* ---------- legend ---------- */
 .legend{display:flex; flex-wrap:wrap; gap:8px 20px; font-size:13px; color:var(--ink-2); margin-bottom:16px}
 .legend span{display:inline-flex; align-items:center; gap:7px}
 .swatch{width:11px; height:11px; border-radius:50%; flex:none}
 .swatch.bar{width:13px; height:8px; border-radius:2px}
+.dashnote{color:var(--muted); font-size:12.5px}
 
-/* ---------- dumbbell / bar rows ---------- */
+/* ---------- dumbbell / diverging rows ---------- */
 .rows{display:flex; flex-direction:column}
-.row{
-  display:grid; align-items:center; gap:0 12px; padding:5px 6px; border-radius:3px;
-  grid-template-columns:8.5em minmax(120px,1fr) 4.6em 4.6em 4.2em;
-}
+.row{display:grid; align-items:center; gap:0 12px; padding:5px 6px; border-radius:3px;
+  grid-template-columns:8.5em minmax(120px,1fr) 4.6em 4.6em 4.2em}
 .row:hover{background:var(--surface-2)}
 .row .lab{font-size:13.5px; color:var(--ink); text-align:right; line-height:1.3}
 .row .num{font-size:13px; text-align:right; font-variant-numeric:tabular-nums; color:var(--ink-2)}
@@ -97,15 +118,13 @@ h2{margin:0; font-size:clamp(21px,3vw,27px); font-weight:640; letter-spacing:-.0
 .hdr .lab,.hdr .num{font-size:11.5px; letter-spacing:.06em; color:var(--muted); font-weight:500;
   font-family:ui-monospace,Consolas,monospace}
 .hdr:hover{background:none}
-
 .track{position:relative; height:20px}
 .track .base{position:absolute; left:0; right:0; top:50%; height:1px; background:var(--grid)}
 .conn{position:absolute; top:50%; height:2px; transform:translateY(-50%); background:var(--gen); opacity:.5}
-.dot{position:absolute; top:50%; width:10px; height:10px; border-radius:50%; transform:translate(-50%,-50%);
-  box-shadow:0 0 0 2px var(--surface)}
+.dot{position:absolute; top:50%; width:10px; height:10px; border-radius:50%;
+  transform:translate(-50%,-50%); box-shadow:0 0 0 2px var(--surface)}
 .dot.i{background:var(--ind)} .dot.g{background:var(--gen)}
 .row:hover .dot{box-shadow:0 0 0 2px var(--surface-2)}
-
 .dv{position:relative; height:20px}
 .dv .zero{position:absolute; top:0; bottom:0; width:1px; background:var(--rule)}
 .dv .b{position:absolute; top:50%; height:11px; transform:translateY(-50%)}
@@ -113,7 +132,6 @@ h2{margin:0; font-size:clamp(21px,3vw,27px); font-weight:640; letter-spacing:-.0
 .dv .b.n{background:var(--neg); border-radius:3px 0 0 3px}
 
 /* ---------- line chart ---------- */
-.chart{position:relative}
 .chart svg{display:block; width:100%; height:auto; overflow:visible}
 .gl{stroke:var(--grid); stroke-width:1}
 .axl{fill:var(--muted); font-size:11px; font-family:ui-monospace,Consolas,monospace}
@@ -127,12 +145,10 @@ h2{margin:0; font-size:clamp(21px,3vw,27px); font-weight:640; letter-spacing:-.0
 .cross.on{opacity:.55}
 
 /* ---------- small multiples ---------- */
-.dashnote{color:var(--muted); font-size:12.5px}
-.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:1px; background:var(--rule);
-  border:1px solid var(--rule)}
+.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:1px;
+  background:var(--rule); border:1px solid var(--rule)}
 .pan{background:var(--surface); padding:12px 14px 10px; display:flex; flex-direction:column; gap:7px}
 .pan:hover{background:var(--surface-2)}
-/* 標題固定兩行高，各欄的圖才會對齊在同一條水平線上 */
 .pan .t{display:flex; justify-content:space-between; align-items:baseline; gap:8px; min-height:2.7em}
 .pan .t b{font-size:13.5px; font-weight:620; line-height:1.25}
 .pan .t span{font-size:11.5px; color:var(--muted); font-family:ui-monospace,Consolas,monospace; white-space:nowrap}
@@ -142,24 +158,53 @@ h2{margin:0; font-size:clamp(21px,3vw,27px); font-weight:640; letter-spacing:-.0
 .pan .bl{stroke:var(--rule); stroke-width:1}
 .pan .b100{stroke:var(--muted); stroke-width:1; stroke-dasharray:2 3; opacity:.6}
 .pan .brk{stroke-dasharray:3 3; opacity:.55}
-.pan .ptick{fill:var(--muted); font-size:8px; font-family:ui-monospace,Consolas,monospace}
-.pan .yr{fill:var(--muted); font-size:8px; font-family:ui-monospace,Consolas,monospace}
+.pan .ptick,.pan .yr{fill:var(--muted); font-size:8px; font-family:ui-monospace,Consolas,monospace}
 
-/* ---------- table ---------- */
+/* ---------- controls ---------- */
+.bar{display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; margin-bottom:14px}
+input[type="search"],input[type="text"]{
+  font:inherit; font-size:14px; padding:7px 11px; min-width:15em; flex:1 1 15em;
+  background:var(--surface); color:var(--ink); border:1px solid var(--rule); border-radius:3px;
+}
+input::placeholder{color:var(--muted)}
+.hint{font-size:12.5px; color:var(--muted)}
+
+/* ---------- tables ---------- */
 .tw{overflow-x:auto; border:1px solid var(--rule); background:var(--surface)}
 table{border-collapse:collapse; width:100%; min-width:660px; font-size:13.5px}
 th,td{padding:8px 12px; text-align:right; white-space:nowrap}
-th{font-size:11.5px; letter-spacing:.05em; color:var(--muted); font-weight:500; border-bottom:1px solid var(--rule);
-  font-family:ui-monospace,Consolas,monospace; position:sticky; top:0; background:var(--surface)}
+th{font-size:11.5px; letter-spacing:.05em; color:var(--muted); font-weight:500;
+  border-bottom:1px solid var(--rule); font-family:ui-monospace,Consolas,monospace;
+  position:sticky; top:0; background:var(--surface); z-index:2}
+th.s{cursor:pointer; user-select:none}
+th.s:hover{color:var(--ink)}
+th.s[aria-sort]{color:var(--ink)}
+th.s[aria-sort]::after{content:" ▾"}
+th.s[aria-sort="ascending"]::after{content:" ▴"}
 td:first-child,th:first-child{text-align:left; position:sticky; left:0; background:var(--surface)}
 tbody tr:hover td{background:var(--surface-2)}
-tbody tr:hover td:first-child{background:var(--surface-2)}
+tbody tr.exp{cursor:pointer}
+tbody tr.exp td:first-child::before{content:"▸ "; color:var(--muted)}
+tbody tr.exp[aria-expanded="true"] td:first-child::before{content:"▾ "}
 td.n{font-variant-numeric:tabular-nums}
+tr.det td{padding:0}
+tr.det .inner{padding:12px 14px 14px; background:var(--surface-2)}
 .pill{display:inline-block; min-width:3.6em; padding:1px 7px; border-radius:9px; font-size:12px;
   font-variant-numeric:tabular-nums; font-weight:600}
 .pill.p{color:var(--pos); background:color-mix(in srgb,var(--pos) 13%,transparent)}
 .pill.n{color:var(--neg); background:color-mix(in srgb,var(--neg) 13%,transparent)}
 .pill.z{color:var(--muted); background:var(--surface-2)}
+.empty{padding:26px; text-align:center; color:var(--muted); font-size:14px}
+
+/* ---------- school lookup ---------- */
+.slist{max-height:230px; overflow-y:auto; border:1px solid var(--rule); background:var(--surface)}
+.slist button{display:block; width:100%; text-align:left; appearance:none; border:0;
+  background:none; color:var(--ink); font:inherit; font-size:14px; padding:7px 13px; cursor:pointer}
+.slist button:hover,.slist button:focus-visible{background:var(--surface-2)}
+.slist button span{color:var(--muted); font-size:12.5px; margin-left:8px}
+.sname{font-size:19px; font-weight:640; margin:0 0 2px}
+.smeta{font-size:13px; color:var(--muted); margin:0 0 14px;
+  font-family:ui-monospace,Consolas,monospace}
 
 /* ---------- caveats ---------- */
 .caveats{display:grid; gap:1px; background:var(--rule); border:1px solid var(--rule)}
@@ -175,21 +220,22 @@ footer{margin-top:56px; border-top:1px solid var(--rule); background:var(--surfa
 .foot a{color:var(--ink-2)}
 
 /* ---------- tooltip ---------- */
-#tip{
-  position:fixed; z-index:50; pointer-events:none; opacity:0; transition:opacity .1s;
+#tip{position:fixed; z-index:60; pointer-events:none; opacity:0; transition:opacity .1s;
   background:var(--tip-bg); color:var(--tip-ink); font-size:12.5px; line-height:1.55;
-  padding:8px 11px; border-radius:5px; max-width:270px; box-shadow:0 4px 16px rgba(0,0,0,.22);
-}
+  padding:8px 11px; border-radius:5px; max-width:270px; box-shadow:0 4px 16px rgba(0,0,0,.22)}
 #tip.on{opacity:1}
 #tip b{font-weight:640}
 #tip .r{display:flex; justify-content:space-between; gap:14px; font-variant-numeric:tabular-nums}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
 @media (max-width:640px){
-  .row{grid-template-columns:7em minmax(80px,1fr) 4.1em 4.1em; }
+  .row{grid-template-columns:7em minmax(80px,1fr) 4.1em 4.1em}
   .row .col-ratio{display:none}
   .head{padding:44px 24px 32px}
 }
 </style>
+</head>
+<body>
 
 <header>
   <div class="head">
@@ -198,14 +244,22 @@ footer{margin-top:56px; border-top:1px solid var(--rule); background:var(--surfa
     <p class="deck">
       同樣念大學，原住民學生和一般生選的科系差很多——而且這九年還在往兩個方向走。
       這份分析把教育部出版品裡的原住民學門統計，接上開放資料的全體學生數，
-      算出 26 個學門、169 個細學類的結構差異與變化。
+      算出 27 個學門、169 個細學類的結構差異與變化。
     </p>
     <div class="byline">
       <span>資料：原住民學生概況統計 A1-3／A1-4 ＋ 大專校院各校科系別概況</span>
-      <span>分類：學科標準分類第 5 次修正</span>
+      <span><a href="https://github.com/ss1111119/moe-indigenous-stats">原始碼與資料集</a></span>
     </div>
   </div>
 </header>
+
+<div class="filter">
+  <div class="inner">
+    <span class="lbl">等級別</span>
+    <div class="seg" id="levelseg" role="group" aria-label="選擇等級別，套用到本頁所有圖表"></div>
+    <span class="cnt" id="levelcnt"></span>
+  </div>
+</div>
 
 <div class="wrap">
 
@@ -216,7 +270,7 @@ footer{margin-top:56px; border-top:1px solid var(--rule); background:var(--surfa
       <p class="note">
         所以「原住民學生占比上升」這句話要小心講：占比從 2.10% 升到 2.50%，
         不是因為原民生變多，是因為分母掉得快。下面所有比較都用結構占比
-        （各自母體裡有多少比例念這個學門），不受這個消長影響。
+        （各自母體裡有多少比例念這個科系），不受這個消長影響。
       </p>
     </div>
     <div class="kpis" id="kpis"></div>
@@ -224,8 +278,8 @@ footer{margin-top:56px; border-top:1px solid var(--rule); background:var(--surfa
 
   <section id="gap">
     <div class="sec-head">
-      <div class="eyebrow">差異　114 學年</div>
-      <h2>原民生集中在照顧與服務，工程與資訊明顯偏少</h2>
+      <div class="eyebrow">差異</div>
+      <h2 id="gapTitle">原民生集中在照顧與服務，工程與資訊明顯偏少</h2>
       <p class="note">
         每條線的兩端是同一個學門在兩個母體裡的占比。線愈長，兩群人的選擇差愈遠。
         最右欄的倍數是原民占比除以一般生占比：<b>1.00</b> 代表兩群人比例相同。
@@ -242,8 +296,8 @@ footer{margin-top:56px; border-top:1px solid var(--rule); background:var(--surfa
 
   <section id="shift">
     <div class="sec-head">
-      <div class="eyebrow">位移　106 → 114 學年</div>
-      <h2>九年間，法律、教育、社福把差距拉得更開</h2>
+      <div class="eyebrow">位移</div>
+      <h2 id="shiftTitle">九年間，哪些學門把差距拉得更開</h2>
       <p class="note">
         這裡看的是倍數本身的變化。往右代表原民生在那個學門「更集中了」，
         往左代表往一般生的比例靠攏、或者反而落後更多。
@@ -261,7 +315,7 @@ footer{margin-top:56px; border-top:1px solid var(--rule); background:var(--surfa
   <section id="trend">
     <div class="sec-head">
       <div class="eyebrow">軌跡</div>
-      <h2>兩個往上、兩個貼著地板</h2>
+      <h2>四個學門的九年走勢</h2>
       <p class="note">
         社福與教育持續拉高，工程與資訊九年來幾乎沒有離開 0.4 附近。
         虛線是 <b>1.00</b>，也就是與一般生比例相同的位置。
@@ -279,8 +333,7 @@ footer{margin-top:56px; border-top:1px solid var(--rule); background:var(--surfa
       <h2>同一個科系，兩群人不一定往同一個方向走</h2>
       <p class="note">
         兩群人數差 40 倍，直接畫會看不出走勢，所以都換算成
-        <b>106 學年 = 100</b> 的指數。縱軸是對數刻度——<b>斜率相同就代表增減倍率相同</b>，
-        線離開 100 那條基準線愈遠，變動愈大。
+        <b>106 學年 = 100</b> 的指數。縱軸是對數刻度——<b>斜率相同就代表增減倍率相同</b>。
       </p>
     </div>
     <div class="card">
@@ -293,24 +346,54 @@ footer{margin-top:56px; border-top:1px solid var(--rule); background:var(--surfa
     </div>
   </section>
 
-  <section id="major">
+  <section id="browser">
     <div class="sec-head">
-      <div class="eyebrow">細學類　原民生 200 人以上</div>
-      <h2>再往下看一層，差異來自哪些具體領域</h2>
+      <div class="eyebrow">瀏覽器　細學類</div>
+      <h2>169 個細學類，全部可查</h2>
       <p class="note">
-        競技運動 8.3 倍、臺灣語文 6.7 倍、社會工作 4.8 倍——學門層級的差異，
-        主要是被這些細學類撐起來的。護理及助產仍是人數最多的一類，但倍數在下降。
+        點任一列展開九年走勢。倍數是原民占比除以一般生占比，
+        <b>1.00</b> 代表兩群人比例相同、大於 1 代表原民生相對集中。
       </p>
     </div>
+    <div class="bar">
+      <input type="search" id="q" placeholder="搜尋細學類，例如「護理」「工程」「運動」"
+             aria-label="搜尋細學類">
+      <span class="hint" id="qcnt"></span>
+    </div>
     <div class="tw">
-      <table id="mtable">
+      <table id="btable">
         <thead><tr>
-          <th>細學類</th><th>原民 106</th><th>原民 114</th><th>原民成長</th>
-          <th>一般生成長</th><th>倍數 106</th><th>倍數 114</th><th>變化</th>
+          <th class="s" data-k="n">細學類</th>
+          <th class="s" data-k="a">原民 起</th>
+          <th class="s" data-k="b">原民 迄</th>
+          <th class="s" data-k="ig">原民成長</th>
+          <th class="s" data-k="gg">一般生成長</th>
+          <th class="s" data-k="ra">倍數 起</th>
+          <th class="s" data-k="rb">倍數 迄</th>
+          <th class="s" data-k="rd">變化</th>
         </tr></thead>
         <tbody></tbody>
       </table>
     </div>
+  </section>
+
+  <section id="schools">
+    <div class="sec-head">
+      <div class="eyebrow">校別查詢</div>
+      <h2>查一所學校</h2>
+      <p class="note">
+        校別資料<b>沒有科系維度</b>，只到等級別，而且只到 113 學年——
+        查得到某校有幾個原民碩士生，查不到他們念什麼系。
+        這一區列出各等級別，不受上方切換器影響。
+      </p>
+    </div>
+    <div class="bar">
+      <input type="text" id="sq" placeholder="輸入校名，例如「宜蘭」「臺東」「科技大學」"
+             aria-label="搜尋學校" autocomplete="off">
+      <span class="hint" id="scnt"></span>
+    </div>
+    <div class="slist" id="slist" role="listbox" aria-label="學校搜尋結果"></div>
+    <div id="sdetail" style="margin-top:18px"></div>
   </section>
 
   <section id="caveats">
@@ -324,7 +407,8 @@ footer{margin-top:56px; border-top:1px solid var(--rule); background:var(--surfa
         <h3>分母缺了 53,407 人，該年不要引用</h3>
         <p>
           科系別檔在 109 學年少了 4.4% 的學生——護理科從 30,063 掉到 1,886，隔年又回到 29,975。
-          拿它跟校別檔對帳，其餘八年完全相等，只有 109 對不上。這是來源檔的缺漏。
+          拿它跟校別檔對帳，其餘八年完全相等，只有 109 對不上。逐個細學類比對後，
+          受影響的 10 類在圖上留白、折線斷開。
         </p>
       </div>
       <div class="cv">
@@ -339,8 +423,8 @@ footer{margin-top:56px; border-top:1px solid var(--rule); background:var(--surfa
         <div class="tag">106 起算</div>
         <h3>再往前接不上分類版本</h3>
         <p>
-          科系別檔 103–105 學年用學科標準分類第 4 次修正的 6 碼代碼，106 學年起改為第 5 次修正的 8 碼。
-          代碼系統不同，無法回溯。
+          科系別檔 103–105 學年用學科標準分類第 4 次修正的 6 碼代碼，
+          106 學年起改為第 5 次修正的 8 碼。代碼系統不同，無法回溯。
         </p>
       </div>
     </div>
@@ -352,20 +436,22 @@ footer{margin-top:56px; border-top:1px solid var(--rule); background:var(--surfa
     <span>分子：stats.moe.gov.tw/files/ebook/indigenous/&lt;學年&gt;/&lt;學年&gt;indigenous.xlsx　sheet A1-3、A1-4</span>
     <span>分母：stats.moe.gov.tw/files/opendata/sdata.json　（政府資料開放平臺 dataset 9621）</span>
     <span>一般生 ＝ 全體學生 − 原住民學生，與教育部提要分析口徑一致</span>
+    <span>資料檔：<a href="data/fields.json">fields.json</a>　<a href="data/majors.json">majors.json</a>　<a href="data/schools.json">schools.json</a></span>
   </div>
 </footer>
 
 <div id="tip" role="status" aria-live="polite"></div>
 
-<script id="rd" type="application/json">__DATA__</script>
 <script>
-(function(){
+(async function(){
 "use strict";
-const D = JSON.parse(document.getElementById("rd").textContent);
-const tip = document.getElementById("tip");
+
+const $ = s => document.querySelector(s);
+const tip = $("#tip");
 const pct = v => v.toFixed(2) + "%";
 const sgn = v => (v > 0 ? "+" : "") + v.toFixed(1) + "%";
 const cls = v => (v > 0 ? "p" : v < 0 ? "n" : "z");
+const fmt = v => v == null ? "—" : v.toLocaleString();
 
 function showTip(html, ev){
   tip.innerHTML = html; tip.classList.add("on");
@@ -381,30 +467,93 @@ function hoverable(el, html){
   el.addEventListener("pointerleave", hideTip);
 }
 
-/* ---------- KPI ---------- */
-(function kpis(){
-  const t = D.totals, i = t.years.length - 1;
-  const rows = [
-    ["原住民學生", t["原民"][i].toLocaleString(),
-     `${t.first_year} → ${t.last_year} 學年　<b class="${t["原民成長率"]>0?"up":"down"}">${sgn(t["原民成長率"]*100)}</b>`],
-    ["一般生", t["一般生"][i].toLocaleString(),
-     `${t.first_year} → ${t.last_year} 學年　<b class="down">${sgn(t["一般生成長率"]*100)}</b>`],
-    ["原民學生占比", pct(t["原民占比"][i]*100),
-     `由 ${pct(t["原民占比"][0]*100)} 上升　<b class="up">+${((t["原民占比"][i]-t["原民占比"][0])*100).toFixed(2)}pp</b>`],
-  ];
-  document.getElementById("kpis").innerHTML = rows.map(
-    ([k,v,d]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`
-  ).join("");
+const [N, F, M, S] = await Promise.all(
+  ["narrative", "fields", "majors", "schools"]
+    .map(n => fetch(`data/${n}.json`).then(r => r.json())));
+
+const YEARS = F.years, Y0 = 0, Y1 = YEARS.length - 1;
+let LEVEL = "總計";
+
+/* ============ 共用計算 ============
+   占比一律用「可比類別、且兩邊當年都有值」的加總當分母，
+   任何一個等級別、任何一年都套同一套公式。 */
+function slice(set, lv){
+  return set.items.filter(it => it.d[lv]).map(it => ({
+    c: it.c, n: it.n, cmp: it.cmp, ind: it.d[lv][0], gen: it.d[lv][1]
+  }));
+}
+function totalsAt(rows, yi){
+  let ti = 0, tg = 0;
+  for (const r of rows)
+    if (r.cmp && r.gen[yi] != null){ ti += r.ind[yi]; tg += r.gen[yi]; }
+  return [ti, tg];
+}
+function ratioAt(r, yi, t){
+  if (!r.cmp || r.gen[yi] == null || !t[0] || !t[1]) return null;
+  const si = r.ind[yi] / t[0], sg = r.gen[yi] / t[1];
+  return sg > 0 ? { si, sg, ratio: si / sg } : null;
+}
+
+/* ============ 等級別切換器 ============ */
+(function levelBar(){
+  const seg = $("#levelseg");
+  seg.innerHTML = F.levels.map(l =>
+    `<button type="button" data-l="${l}" aria-pressed="${l === LEVEL}">${l}</button>`).join("");
+  seg.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    LEVEL = b.dataset.l;
+    seg.querySelectorAll("button").forEach(x =>
+      x.setAttribute("aria-pressed", String(x.dataset.l === LEVEL)));
+    renderAll();
+  });
 })();
 
-/* ---------- dumbbell ---------- */
-(function dumbbell(){
-  const host = document.getElementById("dumbbell");
-  const max = Math.ceil(Math.max(...D.gap.flatMap(d => [d.ind, d.gen])) / 5) * 5;
-  host.insertAdjacentHTML("beforeend",
+function renderAll(){
+  const rows = slice(F, LEVEL);
+  const t0 = totalsAt(rows, Y0), t1 = totalsAt(rows, Y1);
+  $("#levelcnt").textContent =
+    `${YEARS[Y1]} 學年　原民 ${t1[0].toLocaleString()} 人・一般生 ${t1[1].toLocaleString()} 人`;
+  const suffix = LEVEL === "總計" ? "" : `（${LEVEL}）`;
+  $("#gapTitle").textContent =
+    (LEVEL === "總計" ? "原民生集中在照顧與服務，工程與資訊明顯偏少" : "兩群人的學門結構差異") + suffix;
+  $("#shiftTitle").textContent = "九年間，哪些學門把差距拉得更開" + suffix;
+  dumbbell(rows, t1);
+  diverging(rows, t0, t1);
+  lines(rows);
+  panels();
+  browser();
+}
+
+/* ============ KPI ============ */
+(function kpis(){
+  const t = N.totals, i = t.years.length - 1;
+  const rows = [
+    ["原住民學生", t.ind[i].toLocaleString(),
+     `${t.years[0]} → ${t.years[i]} 學年　<b class="${t.indGrowth > 0 ? "up" : "down"}">${sgn(t.indGrowth * 100)}</b>`],
+    ["一般生", t.gen[i].toLocaleString(),
+     `${t.years[0]} → ${t.years[i]} 學年　<b class="down">${sgn(t.genGrowth * 100)}</b>`],
+    ["原民學生占比", pct(t.share[i] * 100),
+     `由 ${pct(t.share[0] * 100)} 上升　<b class="up">+${((t.share[i] - t.share[0]) * 100).toFixed(2)}pp</b>`],
+  ];
+  $("#kpis").innerHTML = rows.map(([k, v, d]) =>
+    `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+})();
+
+/* ============ 差異：啞鈴圖 ============ */
+function dumbbell(rows, t){
+  const host = $("#dumbbell");
+  const data = rows.map(r => ({ r, v: ratioAt(r, Y1, t) }))
+    .filter(x => x.v && (x.r.ind[Y1] || x.r.gen[Y1]))
+    .map(x => ({ name: x.r.n, n: x.r.ind[Y1], ind: x.v.si * 100, gen: x.v.sg * 100,
+                 gap: (x.v.si - x.v.sg) * 100, ratio: x.v.ratio }))
+    .sort((a, b) => b.gap - a.gap);
+  if (!data.length){ host.innerHTML = `<div class="empty">這個等級別沒有資料</div>`; return; }
+
+  const max = Math.max(5, Math.ceil(Math.max(...data.flatMap(d => [d.ind, d.gen])) / 5) * 5);
+  host.innerHTML =
     `<div class="row hdr"><div class="lab">學門</div><div class="lab" style="text-align:left">0 – ${max}% 結構占比</div>
-     <div class="num">原民</div><div class="num">一般生</div><div class="num col-ratio">倍數</div></div>`);
-  D.gap.forEach(d => {
+     <div class="num">原民</div><div class="num">一般生</div><div class="num col-ratio">倍數</div></div>`;
+  data.forEach(d => {
     const a = d.ind / max * 100, b = d.gen / max * 100;
     const lo = Math.min(a, b), hi = Math.max(a, b);
     const el = document.createElement("div");
@@ -412,195 +561,352 @@ function hoverable(el, html){
     el.innerHTML =
       `<div class="lab">${d.name}</div>
        <div class="track"><div class="base"></div>
-         <div class="conn" style="left:${lo}%;width:${hi-lo}%"></div>
+         <div class="conn" style="left:${lo}%;width:${hi - lo}%"></div>
          <div class="dot g" style="left:${b}%"></div>
          <div class="dot i" style="left:${a}%"></div></div>
        <div class="num hi">${d.ind.toFixed(1)}</div>
        <div class="num">${d.gen.toFixed(1)}</div>
        <div class="num col-ratio">${d.ratio.toFixed(2)}</div>`;
     hoverable(el,
-      `<b>${d.name}學門</b>
+      `<b>${d.name}學門・${LEVEL}</b>
        <div class="r"><span>原住民學生</span><span>${d.n.toLocaleString()} 人・${pct(d.ind)}</span></div>
        <div class="r"><span>一般生</span><span>${pct(d.gen)}</span></div>
        <div class="r"><span>差距</span><span>${d.gap > 0 ? "+" : ""}${d.gap.toFixed(2)} pp・${d.ratio.toFixed(2)} 倍</span></div>`);
     host.appendChild(el);
   });
-})();
+}
 
-/* ---------- diverging ---------- */
-(function diverging(){
-  const host = document.getElementById("diverging");
-  const max = Math.max(...D.shift.map(d => Math.abs(d.d))) * 1.06;
-  const mid = 50;
-  host.insertAdjacentHTML("beforeend",
+/* ============ 位移：發散長條 ============ */
+function diverging(rows, t0, t1){
+  const host = $("#diverging");
+  const data = rows.map(r => {
+    const a = ratioAt(r, Y0, t0), b = ratioAt(r, Y1, t1);
+    if (!a || !b || (!r.ind[Y0] && !r.ind[Y1])) return null;
+    const ig = r.ind[Y0] ? r.ind[Y1] / r.ind[Y0] - 1 : null;
+    const gg = r.gen[Y0] ? r.gen[Y1] / r.gen[Y0] - 1 : null;
+    return { name: r.n, a: a.ratio, b: b.ratio, d: b.ratio - a.ratio, ig, gg };
+  }).filter(Boolean).sort((x, y) => y.d - x.d);
+  if (!data.length){ host.innerHTML = `<div class="empty">這個等級別沒有可比的資料</div>`; return; }
+
+  const max = Math.max(...data.map(d => Math.abs(d.d))) * 1.06 || 1, mid = 50;
+  host.innerHTML =
     `<div class="row hdr"><div class="lab">學門</div><div class="lab" style="text-align:center">倍數變化</div>
-     <div class="num">106</div><div class="num">114</div><div class="num col-ratio">變化</div></div>`);
-  D.shift.forEach(d => {
+     <div class="num">${YEARS[Y0]}</div><div class="num">${YEARS[Y1]}</div>
+     <div class="num col-ratio">變化</div></div>`;
+  data.forEach(d => {
     const w = Math.abs(d.d) / max * 50;
     const el = document.createElement("div");
     el.className = "row";
     el.innerHTML =
       `<div class="lab">${d.name}</div>
        <div class="dv"><div class="zero" style="left:${mid}%"></div>
-         <div class="b ${d.d >= 0 ? "p" : "n"}"
-              style="left:${d.d >= 0 ? mid : mid - w}%;width:${w}%"></div></div>
+         <div class="b ${d.d >= 0 ? "p" : "n"}" style="left:${d.d >= 0 ? mid : mid - w}%;width:${w}%"></div></div>
        <div class="num">${d.a.toFixed(2)}</div>
        <div class="num hi">${d.b.toFixed(2)}</div>
        <div class="num col-ratio">${d.d > 0 ? "+" : ""}${d.d.toFixed(2)}</div>`;
     hoverable(el,
-      `<b>${d.name}學門</b>
+      `<b>${d.name}學門・${LEVEL}</b>
        <div class="r"><span>倍數</span><span>${d.a.toFixed(2)} → ${d.b.toFixed(2)}</span></div>
-       <div class="r"><span>原民生人數</span><span>${sgn(d.ind_g)}</span></div>
-       <div class="r"><span>一般生人數</span><span>${sgn(d.gen_g)}</span></div>`);
+       <div class="r"><span>原民生人數</span><span>${d.ig == null ? "—" : sgn(d.ig * 100)}</span></div>
+       <div class="r"><span>一般生人數</span><span>${d.gg == null ? "—" : sgn(d.gg * 100)}</span></div>`);
     host.appendChild(el);
   });
-})();
+}
 
-/* ---------- line chart ---------- */
-(function lines(){
-  const host = document.getElementById("lines");
-  const years = D.trend.years, names = Object.keys(D.trend.series);
-  const colors = ["var(--s1)","var(--s2)","var(--s3)","var(--s4)"];
-  const W = 1000, H = 380, ml = 42, mr = 108, mt = 16, mb = 34;
-  const yMax = 3.8;
-  const X = i => ml + i * (W - ml - mr) / (years.length - 1);
+/* ============ 軌跡：折線 ============ */
+function lines(rows){
+  const host = $("#lines");
+  const tots = YEARS.map((_, i) => totalsAt(rows, i));
+  const picked = N.trendFields
+    .map(n => rows.find(r => r.n === n))
+    .filter(Boolean)
+    .map(r => ({ n: r.n, v: YEARS.map((_, i) => { const x = ratioAt(r, i, tots[i]); return x ? x.ratio : null; }) }))
+    .filter(s => s.v.some(v => v != null));
+
+  if (!picked.length){
+    host.innerHTML = `<div class="empty">這個等級別沒有這四個學門的資料</div>`;
+    $("#tlegend").innerHTML = ""; return;
+  }
+  const colors = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)"];
+  const W = 1000, H = 380, ml = 42, mr = 128, mt = 16, mb = 34;
+  const peak = Math.max(1.2, ...picked.flatMap(s => s.v.filter(v => v != null)));
+  const yMax = Math.ceil(peak * 1.08 * 2) / 2;
+  const X = i => ml + i * (W - ml - mr) / (YEARS.length - 1);
   const Y = v => mt + (1 - v / yMax) * (H - mt - mb);
+  const step = yMax > 4 ? 1 : 0.5;
 
-  document.getElementById("tlegend").innerHTML = names.map((n, i) =>
-    `<span><i class="swatch" style="background:${colors[i]}"></i>${n}</span>`).join("");
+  $("#tlegend").innerHTML = picked.map((s, i) =>
+    `<span><i class="swatch" style="background:${colors[i]}"></i>${s.n}</span>`).join("");
 
-  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="四個學門的原民／一般生比例倍數，106 至 114 學年">`;
-  for (let v = 0; v <= yMax; v += 0.5){
-    s += `<line class="gl" x1="${ml}" y1="${Y(v)}" x2="${W-mr}" y2="${Y(v)}"/>`;
-    s += `<text class="axl" x="${ml-9}" y="${Y(v)+4}" text-anchor="end">${v.toFixed(1)}</text>`;
+  let g = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="四個學門的原民／一般生比例倍數，${YEARS[0]} 至 ${YEARS[Y1]} 學年">`;
+  for (let v = 0; v <= yMax + 1e-9; v += step){
+    g += `<line class="gl" x1="${ml}" y1="${Y(v)}" x2="${W - mr}" y2="${Y(v)}"/>`
+       + `<text class="axl" x="${ml - 9}" y="${Y(v) + 4}" text-anchor="end">${v.toFixed(1)}</text>`;
   }
-  s += `<line class="refl" x1="${ml}" y1="${Y(1)}" x2="${W-mr}" y2="${Y(1)}"/>`;
-  s += `<text class="refx" x="${ml+6}" y="${Y(1)-7}">1.00　與一般生比例相同</text>`;
-  years.forEach((y, i) => {
-    s += `<text class="axl" x="${X(i)}" y="${H-12}" text-anchor="middle">${y}</text>`;
-  });
-  names.forEach((n, si) => {
-    const v = D.trend.series[n];
-    s += `<path class="ser" stroke="${colors[si]}" d="${v.map((p,i)=>`${i?"L":"M"}${X(i)} ${Y(p)}`).join(" ")}"/>`;
-    v.forEach((p, i) => {
-      s += `<circle cx="${X(i)}" cy="${Y(p)}" r="3.6" fill="${colors[si]}" stroke="var(--surface)" stroke-width="2"/>`;
-    });
+  g += `<line class="refl" x1="${ml}" y1="${Y(1)}" x2="${W - mr}" y2="${Y(1)}"/>`
+     + `<text class="refx" x="${ml + 6}" y="${Y(1) - 7}">1.00　與一般生比例相同</text>`;
+  YEARS.forEach((y, i) => { g += `<text class="axl" x="${X(i)}" y="${H - 12}" text-anchor="middle">${y}</text>`; });
+
+  picked.forEach((s, si) => {
+    const pts = s.v.map((p, i) => p == null ? null : [X(i), Y(p)]).filter(Boolean);
+    g += `<path class="ser" stroke="${colors[si]}" d="${pts.map((p, k) => `${k ? "L" : "M"}${p[0]} ${p[1]}`).join(" ")}"/>`;
+    pts.forEach(p => { g += `<circle cx="${p[0]}" cy="${p[1]}" r="3.6" fill="${colors[si]}" stroke="var(--surface)" stroke-width="2"/>`; });
   });
 
-  // 端點標籤去重疊：資訊與工程只差 0.03 倍，直接放會疊在一起。
-  // 由上往下推開到最小間距，移動過的補一條引導線。
-  const GAP = 17, xEnd = X(years.length - 1);
-  const labs = names.map((n, si) => {
-    const v = D.trend.series[n];
-    const last = v[v.length - 1];
-    return { n, si, v: last, y0: Y(last), y: Y(last) };
+  // 端點標籤去重疊：往下推開到最小間距，移動過的補一條引導線
+  const GAP = 17, xEnd = X(Y1);
+  const labs = picked.map((s, si) => {
+    const last = [...s.v].reverse().find(v => v != null);
+    return { n: s.n, si, v: last, y0: Y(last), y: Y(last) };
   }).sort((a, b) => a.y0 - b.y0);
-  for (let i = 1; i < labs.length; i++){
-    if (labs[i].y - labs[i-1].y < GAP) labs[i].y = labs[i-1].y + GAP;
-  }
+  for (let i = 1; i < labs.length; i++)
+    if (labs[i].y - labs[i - 1].y < GAP) labs[i].y = labs[i - 1].y + GAP;
   labs.forEach(l => {
-    if (Math.abs(l.y - l.y0) > 1){
-      s += `<path class="lead" stroke="${colors[l.si]}" d="M${xEnd+4} ${l.y0} L${xEnd+9} ${l.y-4}"/>`;
-    }
-    s += `<text class="endlab" fill="${colors[l.si]}" x="${xEnd+12}" y="${l.y+4}">${l.n}　${l.v.toFixed(2)}</text>`;
+    if (Math.abs(l.y - l.y0) > 1)
+      g += `<path class="lead" stroke="${colors[l.si]}" d="M${xEnd + 4} ${l.y0} L${xEnd + 9} ${l.y - 4}"/>`;
+    g += `<text class="endlab" fill="${colors[l.si]}" x="${xEnd + 12}" y="${l.y + 4}">${l.n}　${l.v.toFixed(2)}</text>`;
   });
-  s += `<line class="cross" id="cx" y1="${mt}" y2="${H-mb}"/>`;
-  years.forEach((y, i) => {
-    s += `<line class="hitline" x1="${X(i)}" y1="${mt}" x2="${X(i)}" y2="${H-mb}" data-i="${i}"/>`;
-  });
-  s += `</svg>`;
-  host.innerHTML = s;
+
+  g += `<line class="cross" id="cx" y1="${mt}" y2="${H - mb}"/>`;
+  YEARS.forEach((y, i) => { g += `<line class="hitline" x1="${X(i)}" y1="${mt}" x2="${X(i)}" y2="${H - mb}" data-i="${i}"/>`; });
+  host.innerHTML = g + `</svg>`;
 
   const cx = host.querySelector("#cx");
   host.querySelectorAll(".hitline").forEach(l => {
     l.addEventListener("pointermove", e => {
       const i = +l.dataset.i;
       cx.setAttribute("x1", X(i)); cx.setAttribute("x2", X(i)); cx.classList.add("on");
-      showTip(`<b>${years[i]} 學年</b>` + names.map(n =>
-        `<div class="r"><span>${n}</span><span>${D.trend.series[n][i].toFixed(2)} 倍</span></div>`).join(""), e);
+      showTip(`<b>${YEARS[i]} 學年・${LEVEL}</b>` + picked.map(s =>
+        `<div class="r"><span>${s.n}</span><span>${s.v[i] == null ? "—" : s.v[i].toFixed(2) + " 倍"}</span></div>`).join(""), e);
     });
     l.addEventListener("pointerleave", () => { cx.classList.remove("on"); hideTip(); });
   });
-})();
+}
 
-/* ---------- small multiples ---------- */
-(function panels(){
-  const host = document.getElementById("panels");
-  const years = D.panels.years;
+/* ============ 小倍數：指數走勢 ============ */
+function panels(){
+  const host = $("#panels");
+  const rows = slice(M, LEVEL)
+    .filter(r => r.cmp && r.ind[Y0] > 0 && r.gen[Y0])
+    .sort((a, b) => b.ind[Y1] - a.ind[Y1]).slice(0, 12);
+  if (!rows.length){ host.innerHTML = `<div class="empty">這個等級別沒有足夠的資料</div>`; return; }
+
   const W = 230, H = 100, ml = 22, mr = 6, mt = 9, mb = 13;
-  const LO = 50, HI = 400;                       // 對數刻度上下界
-  const lg = v => Math.log(v) / Math.LN2;
-  const X = i => ml + i * (W - ml - mr) / (years.length - 1);
+  const LO = 50, HI = 400, lg = v => Math.log(v) / Math.LN2;
+  const X = i => ml + i * (W - ml - mr) / (YEARS.length - 1);
   const Y = v => mt + (1 - (lg(v) - lg(LO)) / (lg(HI) - lg(LO))) * (H - mt - mb);
   const clamp = v => Math.min(HI, Math.max(LO, v));
 
-  // 有缺口的序列切成連續片段，中間補一段虛線橋接
-  const segments = v => {
+  const segs = v => {
     const out = []; let cur = [];
-    v.forEach((p, i) => {
-      if (p == null){ if (cur.length) out.push(cur); cur = []; }
-      else cur.push(i);
-    });
+    v.forEach((p, i) => { if (p == null){ if (cur.length) out.push(cur); cur = []; } else cur.push(i); });
     if (cur.length) out.push(cur);
     return out;
   };
-  const path = (v, idx) => idx.map((i, k) => `${k ? "L" : "M"}${X(i)} ${Y(clamp(v[i]))}`).join(" ");
+  const dpath = (v, idx) => idx.map((i, k) => `${k ? "L" : "M"}${X(i)} ${Y(clamp(v[i]))}`).join(" ");
 
-  host.innerHTML = D.panels.items.map(p => {
+  host.innerHTML = rows.map(r => {
+    const ind = r.ind.map(v => v / r.ind[Y0] * 100);
+    const gen = r.gen.map(v => v == null ? null : v / r.gen[Y0] * 100);
     let g = "";
-    for (const v of [50, 200, 400])
-      g += `<line class="bl" x1="${ml}" y1="${Y(v)}" x2="${W-mr}" y2="${Y(v)}"/>`;
-    g += `<line class="b100" x1="${ml}" y1="${Y(100)}" x2="${W-mr}" y2="${Y(100)}"/>`;
-    for (const v of [400, 200, 100, 50])
-      g += `<text class="ptick" x="${ml-5}" y="${Y(v)+3}" text-anchor="end">${v}</text>`;
-    g += `<line class="bl" x1="${ml}" y1="${mt}" x2="${ml}" y2="${H-mb}"/>`;
+    for (const v of [50, 200, 400]) g += `<line class="bl" x1="${ml}" y1="${Y(v)}" x2="${W - mr}" y2="${Y(v)}"/>`;
+    g += `<line class="b100" x1="${ml}" y1="${Y(100)}" x2="${W - mr}" y2="${Y(100)}"/>`;
+    for (const v of [400, 200, 100, 50]) g += `<text class="ptick" x="${ml - 5}" y="${Y(v) + 3}" text-anchor="end">${v}</text>`;
+    g += `<line class="bl" x1="${ml}" y1="${mt}" x2="${ml}" y2="${H - mb}"/>`;
 
-    const segs = segments(p.gen);
-    segs.forEach(s => { g += `<path class="ser" stroke="var(--gen)" d="${path(p.gen, s)}"/>`; });
-    for (let k = 1; k < segs.length; k++){
-      const a = segs[k-1][segs[k-1].length-1], b = segs[k][0];
-      g += `<path class="ser brk" stroke="var(--gen)" d="M${X(a)} ${Y(clamp(p.gen[a]))} L${X(b)} ${Y(clamp(p.gen[b]))}"/>`;
+    const ss = segs(gen);
+    ss.forEach(s => { g += `<path class="ser" stroke="var(--gen)" d="${dpath(gen, s)}"/>`; });
+    for (let k = 1; k < ss.length; k++){
+      const a = ss[k - 1][ss[k - 1].length - 1], b = ss[k][0];
+      g += `<path class="ser brk" stroke="var(--gen)" d="M${X(a)} ${Y(clamp(gen[a]))} L${X(b)} ${Y(clamp(gen[b]))}"/>`;
     }
-    g += `<path class="ser" stroke="var(--ind)" d="${path(p.ind, p.ind.map((_, i) => i))}"/>`;
-    const li = p.ind.length - 1;
-    g += `<circle cx="${X(li)}" cy="${Y(clamp(p.ind[li]))}" r="3" fill="var(--ind)" stroke="var(--surface)" stroke-width="1.5"/>`;
-    g += `<text class="yr" x="${ml}" y="${H-3}">${years[0]}</text>`
-       + `<text class="yr" x="${W-mr}" y="${H-3}" text-anchor="end">${years[li]}</text>`;
+    g += `<path class="ser" stroke="var(--ind)" d="${dpath(ind, ind.map((_, i) => i))}"/>`
+       + `<circle cx="${X(Y1)}" cy="${Y(clamp(ind[Y1]))}" r="3" fill="var(--ind)" stroke="var(--surface)" stroke-width="1.5"/>`
+       + `<text class="yr" x="${ml}" y="${H - 3}">${YEARS[0]}</text>`
+       + `<text class="yr" x="${W - mr}" y="${H - 3}" text-anchor="end">${YEARS[Y1]}</text>`;
 
-    const genLast = [...p.gen].reverse().find(v => v != null);
-    return `<div class="pan" data-n="${p.name}">
-      <div class="t"><b>${p.name}</b><span>${p.n.toLocaleString()} 人</span></div>
+    const gl = [...gen].reverse().find(v => v != null);
+    return `<div class="pan">
+      <div class="t"><b>${r.n}</b><span>${r.ind[Y1].toLocaleString()} 人</span></div>
       <svg viewBox="0 0 ${W} ${H}" role="img"
-        aria-label="${p.name}：原民生指數 ${p.ind[li]}、一般生指數 ${genLast}，基期 ${years[0]} 學年＝100">${g}</svg>
-      <div class="f">
-        <span><i style="background:var(--ind)"></i>${p.ind[li].toFixed(0)}</span>
-        <span><i style="background:var(--gen)"></i>${genLast == null ? "—" : genLast.toFixed(0)}</span>
-      </div>
+        aria-label="${r.n}：原民生指數 ${ind[Y1].toFixed(0)}、一般生指數 ${gl == null ? "無" : gl.toFixed(0)}，基期 ${YEARS[0]} 學年＝100">${g}</svg>
+      <div class="f"><span><i style="background:var(--ind)"></i>${ind[Y1].toFixed(0)}</span>
+        <span><i style="background:var(--gen)"></i>${gl == null ? "—" : gl.toFixed(0)}</span></div>
     </div>`;
   }).join("");
 
-  D.panels.items.forEach((p, k) => {
+  rows.forEach((r, k) => {
+    const ind = r.ind.map(v => v / r.ind[Y0] * 100);
+    const gen = r.gen.map(v => v == null ? null : v / r.gen[Y0] * 100);
     hoverable(host.children[k],
-      `<b>${p.name}</b><div class="r"><span>基期</span><span>${years[0]} 學年 = 100</span></div>` +
-      years.map((y, i) =>
-        `<div class="r"><span>${y}</span><span>原民 ${p.ind[i] == null ? "—" : p.ind[i].toFixed(0)}　`
-        + `一般 ${p.gen[i] == null ? "—" : p.gen[i].toFixed(0)}</span></div>`).join(""));
+      `<b>${r.n}・${LEVEL}</b><div class="r"><span>基期</span><span>${YEARS[0]} 學年 = 100</span></div>` +
+      YEARS.map((y, i) => `<div class="r"><span>${y}</span><span>原民 ${ind[i].toFixed(0)}　一般 ${gen[i] == null ? "—" : gen[i].toFixed(0)}</span></div>`).join(""));
   });
+}
+
+/* ============ 細學類瀏覽器 ============ */
+let sortKey = "b", sortAsc = false;
+function browser(){
+  const rows = slice(M, LEVEL);
+  const t0 = totalsAt(rows, Y0), t1 = totalsAt(rows, Y1);
+  const q = $("#q").value.trim();
+  const data = rows.map(r => {
+    const a = ratioAt(r, Y0, t0), b = ratioAt(r, Y1, t1);
+    return {
+      n: r.n, cmp: r.cmp, ind: r.ind, gen: r.gen,
+      a: r.ind[Y0], b: r.ind[Y1],
+      ig: r.ind[Y0] ? (r.ind[Y1] / r.ind[Y0] - 1) * 100 : null,
+      gg: r.gen[Y0] && r.gen[Y1] != null ? (r.gen[Y1] / r.gen[Y0] - 1) * 100 : null,
+      ra: a ? a.ratio : null, rb: b ? b.ratio : null,
+      rd: a && b ? b.ratio - a.ratio : null,
+    };
+  }).filter(d => (d.a || d.b) && (!q || d.n.includes(q)));
+
+  data.sort((x, y) => {
+    const [p, r] = [x[sortKey], y[sortKey]];
+    if (p == null) return 1;
+    if (r == null) return -1;
+    const c = typeof p === "string" ? p.localeCompare(r, "zh-Hant") : p - r;
+    return sortAsc ? c : -c;
+  });
+
+  $("#qcnt").textContent = `${data.length} / ${rows.length} 類　${LEVEL}`;
+  document.querySelectorAll("#btable th.s").forEach(th => {
+    if (th.dataset.k === sortKey) th.setAttribute("aria-sort", sortAsc ? "ascending" : "descending");
+    else th.removeAttribute("aria-sort");
+  });
+
+  const tb = $("#btable tbody");
+  if (!data.length){
+    tb.innerHTML = `<tr><td colspan="8"><div class="empty">找不到符合的細學類</div></td></tr>`;
+    return;
+  }
+  const num = (v, s) => v == null ? `<td class="n">—</td>`
+    : `<td class="n">${s ? `<span class="pill ${cls(v)}">${sgn(v)}</span>` : v.toFixed(2)}</td>`;
+  tb.innerHTML = data.map((d, i) => `<tr class="exp" data-i="${i}" aria-expanded="false" tabindex="0">
+      <td>${d.n}${d.cmp ? "" : ' <span class="pill z">不可比</span>'}</td>
+      <td class="n">${fmt(d.a)}</td><td class="n">${fmt(d.b)}</td>
+      ${num(d.ig, 1)}${num(d.gg, 1)}${num(d.ra)}${num(d.rb)}
+      ${d.rd == null ? `<td class="n">—</td>` : `<td class="n"><span class="pill ${cls(d.rd)}">${d.rd > 0 ? "+" : ""}${d.rd.toFixed(2)}</span></td>`}
+    </tr><tr class="det" hidden><td colspan="8"><div class="inner"></div></td></tr>`).join("");
+
+  const toggle = tr => {
+    const det = tr.nextElementSibling, open = tr.getAttribute("aria-expanded") === "true";
+    tr.setAttribute("aria-expanded", String(!open));
+    det.hidden = open;
+    if (!open && !det.dataset.done){
+      det.querySelector(".inner").innerHTML = sparkline(data[+tr.dataset.i]);
+      det.dataset.done = "1";
+    }
+  };
+  tb.querySelectorAll("tr.exp").forEach(tr => {
+    tr.addEventListener("click", () => toggle(tr));
+    tr.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " "){ e.preventDefault(); toggle(tr); }
+    });
+  });
+}
+
+function sparkline(d){
+  const W = 620, H = 130, ml = 40, mr = 12, mt = 12, mb = 22;
+  const vals = [...d.ind, ...d.gen.filter(v => v != null)];
+  const hi = Math.max(...vals) * 1.1 || 1;
+  const X = i => ml + i * (W - ml - mr) / (YEARS.length - 1);
+  const Y = v => mt + (1 - v / hi) * (H - mt - mb);
+  let g = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;max-width:${W}px"
+      role="img" aria-label="${d.n} 逐年人數">`;
+  for (const f of [0, .5, 1]){
+    const v = hi * f;
+    g += `<line class="gl" x1="${ml}" y1="${Y(v)}" x2="${W - mr}" y2="${Y(v)}"/>`
+       + `<text class="axl" x="${ml - 7}" y="${Y(v) + 4}" text-anchor="end">${Math.round(v).toLocaleString()}</text>`;
+  }
+  YEARS.forEach((y, i) => { g += `<text class="axl" x="${X(i)}" y="${H - 6}" text-anchor="middle">${y}</text>`; });
+  const line = (arr, color) => {
+    const pts = arr.map((v, i) => v == null ? null : `${X(i)} ${Y(v)}`).filter(Boolean);
+    return `<path class="ser" stroke="${color}" d="M${pts.join(" L")}"/>`;
+  };
+  g += line(d.gen, "var(--gen)") + line(d.ind, "var(--ind)");
+  d.ind.forEach((v, i) => { g += `<circle cx="${X(i)}" cy="${Y(v)}" r="3" fill="var(--ind)" stroke="var(--surface)" stroke-width="1.5"/>`; });
+  g += `</svg><div class="hint" style="margin-top:6px">
+    <span style="color:var(--ind)">●</span> 原住民 ${fmt(d.b)} 人
+    <span style="color:var(--gen)">●</span> 一般生 ${fmt(d.gen[Y1])} 人　（${LEVEL}，人數非指數）</div>`;
+  return g;
+}
+
+$("#q").addEventListener("input", browser);
+document.querySelectorAll("#btable th.s").forEach(th => {
+  th.addEventListener("click", () => {
+    const k = th.dataset.k;
+    if (k === sortKey) sortAsc = !sortAsc; else { sortKey = k; sortAsc = k === "n"; }
+    browser();
+  });
+});
+
+/* ============ 校別查詢 ============ */
+(function schools(){
+  const list = $("#slist"), detail = $("#sdetail"), input = $("#sq");
+  const SY = S.years, li = SY.length - 1;
+
+  // 表格裡的迷你走勢：十個數字擠在一格讀不出形狀，畫成線比較快
+  function spark(v){
+    const w = 108, h = 20, hi = Math.max(...v, 1);
+    const X = i => i * w / (v.length - 1);
+    const Y = n => h - 2 - (n / hi) * (h - 5);
+    return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="vertical-align:-4px"
+        role="img" aria-label="逐年 ${v.join("、")}">
+      <path class="ser" stroke="var(--ind)" stroke-width="1.5"
+        d="${v.map((n, i) => `${i ? "L" : "M"}${X(i)} ${Y(n)}`).join(" ")}"/>
+      <circle cx="${X(v.length - 1)}" cy="${Y(v[v.length - 1])}" r="2.4" fill="var(--ind)"/>
+    </svg> <span style="color:var(--muted)">最高 ${hi}</span>`;
+  }
+
+  function results(){
+    const q = input.value.trim();
+    const hit = q ? S.items.filter(s => s.n.includes(q)) : [];
+    $("#scnt").textContent = q ? `${hit.length} 所符合` : `共 ${S.items.length} 所學校有原住民學生`;
+    list.innerHTML = hit.slice(0, 40).map(s =>
+      `<button type="button" role="option" data-c="${s.c}">${s.n}<span>${s.t}</span></button>`).join("")
+      || (q ? `<div class="empty">找不到「${q}」</div>` : `<div class="empty">輸入校名開始查詢</div>`);
+  }
+  function show(code){
+    const s = S.items.find(x => x.c === code);
+    if (!s) return;
+    const order = ["博士班", "碩士班", "學士班", "二專", "五專"];
+    const rows = order.filter(lv => s.d[lv] && s.d[lv][0].some(v => v > 0)).map(lv => {
+      const [ind, tot] = s.d[lv];
+      const share = tot[li] ? ind[li] / tot[li] : null;
+      const ref = (S.ref[lv] || [])[li];
+      return `<tr>
+        <td>${lv}</td>
+        <td class="n">${fmt(ind[li])}</td>
+        <td class="n">${fmt(tot[li])}</td>
+        <td class="n">${share == null ? "—" : pct(share * 100)}</td>
+        <td class="n">${ref == null ? "—" : pct(ref * 100)}</td>
+        <td class="n">${share == null || ref == null ? "—"
+          : `<span class="pill ${cls(share - ref)}">${(share / ref).toFixed(2)} 倍</span>`}</td>
+        <td class="n">${spark(ind)}</td>
+      </tr>`;
+    }).join("");
+    detail.innerHTML = rows ? `
+      <p class="sname">${s.n}</p>
+      <p class="smeta">${s.c}　${s.t}　${SY[li]} 學年</p>
+      <div class="tw"><table style="min-width:720px"><thead><tr>
+        <th>等級別</th><th>原民生</th><th>全體</th><th>該校占比</th><th>全國占比</th><th>相對</th>
+        <th>原民生逐年（${SY[0]}–${SY[li]}）</th>
+      </tr></thead><tbody>${rows}</tbody></table></div>
+      <p class="hint" style="margin-top:8px">校別資料沒有科系維度，且僅到 ${SY[li]} 學年。</p>`
+      : `<div class="empty">${s.n} 沒有可顯示的資料</div>`;
+    detail.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  input.addEventListener("input", results);
+  list.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (b) show(b.dataset.c);
+  });
+  results();
 })();
 
-/* ---------- major table ---------- */
-(function table(){
-  const tb = document.querySelector("#mtable tbody");
-  tb.innerHTML = D.major.map(m => `<tr>
-    <td>${m.name}</td>
-    <td class="n">${m.n06.toLocaleString()}</td>
-    <td class="n">${m.n14.toLocaleString()}</td>
-    <td class="n"><span class="pill ${cls(m.ind_g)}">${sgn(m.ind_g)}</span></td>
-    <td class="n"><span class="pill ${cls(m.gen_g)}">${sgn(m.gen_g)}</span></td>
-    <td class="n">${m.a.toFixed(2)}</td>
-    <td class="n">${m.b.toFixed(2)}</td>
-    <td class="n"><span class="pill ${cls(m.d)}">${m.d > 0 ? "+" : ""}${m.d.toFixed(2)}</span></td>
-  </tr>`).join("");
-})();
+renderAll();
 })();
 </script>
+</body>
+</html>

@@ -5,11 +5,27 @@
 這個專案把那些出版品解析出來，接上開放資料的全體學生數，
 產出可以直接分析的 CSV，以及一份對照報告。
 
-📊 **報告頁：`https://ss1111119.github.io/moe-indigenous-stats/`**
+📊 **報告頁：https://ss1111119.github.io/moe-indigenous-stats/**
 
-- **106–114 學年**，27 個學門、169 個細學類
+- **106–114 學年**，27 個學門、169 個細學類、240 所學校
 - 原住民學生 vs 一般生的**結構差異**與**逐年增減趨勢**
+- 可切換 6 個等級別（總計／博／碩／學士／二專／五專），全頁圖表同步重算
+- 細學類可搜尋、排序、展開看九年走勢；可查單一學校
 - 每個數字都標明口徑，不可比的部分明確標記
+
+### 資料端點
+
+報告頁在瀏覽器端 fetch 這幾支 JSON，你也可以直接拿去用：
+
+| 端點 | 內容 | 大小 |
+|---|---|---:|
+| [`data/fields.json`](https://ss1111119.github.io/moe-indigenous-stats/data/fields.json) | 27 學門 × 9 年 × 6 等級別的原民／一般生人數 | 15 KB |
+| [`data/majors.json`](https://ss1111119.github.io/moe-indigenous-stats/data/majors.json) | 169 細學類，同上結構 | 84 KB |
+| [`data/schools.json`](https://ss1111119.github.io/moe-indigenous-stats/data/schools.json) | 240 校 × 等級別 × 104–113 學年，附全國占比對照 | 67 KB |
+
+送的是**原始人數**，占比、指數、相對倍數一律在前端算——所以換等級別時
+所有圖表用同一套公式重算，口徑不會分岔。`cmp: 0` 表示該類不可比（見下方 999 說明），
+一般生數值為 `null` 表示該年分母缺漏。
 
 ## ⚠️ 用之前先看這三件事
 
@@ -36,8 +52,12 @@ python fetch.py ebooks sdata   # 出版品 xls/xlsx + 各校科系別概況（�
 python build.py                # 校別／年級層級
 python build_field.py          # 學門與細學類層級
 python build_trend.py          # 逐年指數序列
-python export_report.py        # 報告頁 → docs/index.html
+python export_report.py        # 報告頁 → docs/
+
+python -m http.server -d docs 8000   # 本機預覽
 ```
+
+報告頁要 fetch `data/*.json`，**不能直接用 `file://` 開**，得起一個 server。
 
 `out/` 的 CSV 已經放進版控，**不跑 pipeline 也能直接用**。
 `data/`（原始檔 71MB）沒有進版控，`fetch.py` 可完整重建。

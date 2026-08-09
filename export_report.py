@@ -1,4 +1,14 @@
-"""把 out/ 的表整理成報告頁要用的 JSON（out/report_data.json）。"""
+"""產生 GitHub Pages 站台：docs/index.html ＋ docs/data/*.json。
+
+頁面在瀏覽器端 fetch 這些 JSON，所以資料換版時只有 JSON 檔會變動，
+git diff 乾淨，而且那些 JSON 本身就能被別人當現成的資料端點使用。
+
+送出的是原始人數，占比、指數、相對倍數一律在前端算——這樣等級別切換器
+換到任何一個學制，所有圖表都用同一套公式重算，口徑不會分岔。
+
+因為要 fetch，本機預覽不能直接開 file://，要起一個 server：
+    python -m http.server -d docs 8000
+"""
 
 import json
 import sys
@@ -10,37 +20,90 @@ ROOT = Path(__file__).parent
 OUT = ROOT / "out"
 DOCS = ROOT / "docs"
 
-PAGE = """<!doctype html>
-<html lang="zh-Hant">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="原住民學生與一般生在大專科系的結構差異與 106–114 學年增減趨勢。資料來源：教育部統計處。">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>%F0%9F%93%8A</text></svg>">
-</head>
-<body>
-{body}
-</body>
-</html>
-"""
+LEVELS = ["總計", "博士班", "碩士班", "學士班", "二專", "五專"]
 
-# 相對倍數趨勢圖挑的學門：兩個過度集中、兩個明顯不足，故事最清楚
-TREND_FIELDS = ["社會福利學門", "教育學門", "資訊通訊科技學門", "工程及工程業學門"]
+# 軌跡圖預設挑的學門：兩個過度集中、兩個明顯不足，故事最清楚
+TREND_FIELDS = ["社會福利", "教育", "資訊通訊科技", "工程及工程業"]
+
+
+def suspect_codes(df: pd.DataFrame) -> set:
+    """找出 109 學年一般生人數明顯低於 108／110 內插值的類別。
+
+    sdata 109 年整體短少 4.4%，但集中在少數類別，逐類判斷比整年作廢精準。
+    """
+    p = df[df["等級別"] == "總計"].pivot_table(
+        index="代碼", columns="學年度", values="一般生在學數")
+    if not {108, 109, 110} <= set(p.columns):
+        return set()
+    ratio = p[109] / ((p[108] + p[110]) / 2).replace(0, float("nan"))
+    return set(ratio[ratio < 0.9].index)
+
+
+def pack_categories(df: pd.DataFrame, strip: str) -> list:
+    """打包成 [{c 代碼, n 名稱, cmp 可比, d {等級別: [原民[], 一般生[]]}}]。
+
+    109 分母有缺漏的類別，其一般生數值送 null，前端畫線時斷開、算占比時跳過。
+    """
+    bad = suspect_codes(df)
+    out = []
+    for code, g in df.groupby("代碼"):
+        rec = {"c": code, "n": g["名稱"].iloc[-1].replace(strip, ""),
+               "cmp": 1 if bool(g["可比"].iloc[-1]) else 0, "d": {}}
+        for lv in LEVELS:
+            s = g[g["等級別"] == lv].sort_values("學年度")
+            if s.empty:
+                continue
+            rec["d"][lv] = [
+                [int(v) for v in s["原民在學數"].fillna(0)],
+                [None if (pd.isna(v) or (code in bad and y == 109)) else int(v)
+                 for v, y in zip(s["一般生在學數"], s["學年度"])],
+            ]
+        out.append(rec)
+    return sorted(out, key=lambda r: r["c"])
+
+
+def pack_schools() -> dict:
+    """校別：每校每等級別的原民與全體人數，附全國占比對照。"""
+    s = pd.read_csv(OUT / "compare_by_school.csv", dtype={"學校代碼": str})
+    s = s[s["原住民在學數"] > 0]
+    years = sorted(int(y) for y in s["學年度"].unique())
+    idx = {y: i for i, y in enumerate(years)}
+
+    schools = {}
+    for (code, name), g in s.groupby(["學校代碼", "學校名稱"]):
+        rec = schools.setdefault(
+            code, {"c": code, "n": name, "t": g["學校類別"].iloc[-1], "d": {}})
+        for lv, gl in g.groupby("等級別"):
+            ind, tot = [0] * len(years), [None] * len(years)
+            for r in gl.itertuples():
+                i = idx[int(r.學年度)]
+                ind[i] = int(r.原住民在學數)
+                tot[i] = None if pd.isna(r.全體在學數) else int(r.全體在學數)
+            rec["d"][lv] = [ind, tot]
+
+    nat = pd.read_csv(OUT / "compare_national.csv")
+    ref = {}
+    for lv, g in nat.groupby("等級別"):
+        g = g.set_index("學年度")
+        ref[lv] = [None if y not in g.index else round(float(g.loc[y, "原住民佔比"]), 5)
+                   for y in years]
+
+    return {"years": years, "ref": ref,
+            "items": sorted(schools.values(), key=lambda r: r["n"])}
 
 
 def totals(field: pd.DataFrame) -> dict:
-    t = field.groupby("學年度")[["原民在學數", "一般生在學數"]].sum()
-    t["原民占比"] = t["原民在學數"] / (t["原民在學數"] + t["一般生在學數"])
+    f = field[(field["等級別"] == "總計") & field["可比"]]
+    t = f.groupby("學年度")[["原民在學數", "一般生在學數"]].sum()
+    t["占比"] = t["原民在學數"] / (t["原民在學數"] + t["一般生在學數"])
     first, last = t.index.min(), t.index.max()
     return {
         "years": [int(y) for y in t.index],
-        "原民": [int(v) for v in t["原民在學數"]],
-        "一般生": [int(v) for v in t["一般生在學數"]],
-        "原民占比": [round(float(v), 5) for v in t["原民占比"]],
-        "first_year": int(first),
-        "last_year": int(last),
-        "原民成長率": round(float(t.loc[last, "原民在學數"] / t.loc[first, "原民在學數"] - 1), 4),
-        "一般生成長率": round(float(t.loc[last, "一般生在學數"] / t.loc[first, "一般生在學數"] - 1), 4),
+        "ind": [int(v) for v in t["原民在學數"]],
+        "gen": [int(v) for v in t["一般生在學數"]],
+        "share": [round(float(v), 5) for v in t["占比"]],
+        "indGrowth": round(float(t.loc[last, "原民在學數"] / t.loc[first, "原民在學數"] - 1), 4),
+        "genGrowth": round(float(t.loc[last, "一般生在學數"] / t.loc[first, "一般生在學數"] - 1), 4),
     }
 
 
@@ -49,94 +112,32 @@ def main() -> None:
         sys.stdout.reconfigure(encoding="utf-8")
 
     field = pd.read_csv(OUT / "compare_field.csv", dtype={"代碼": str})
-    field = field[(field["等級別"] == "總計") & field["可比"]]
-    last = int(field["學年度"].max())
+    major = pd.read_csv(OUT / "compare_major.csv", dtype={"代碼": str})
+    years = [int(y) for y in sorted(field["學年度"].unique())]
 
-    cur = field[field["學年度"] == last].sort_values("結構差距_百分點", ascending=False)
-    gap = [
-        {
-            "name": r["名稱"].replace("學門", ""),
-            "ind": round(r["原民結構占比"] * 100, 2),
-            "gen": round(r["一般生結構占比"] * 100, 2),
-            "gap": round(r["結構差距_百分點"], 2),
-            "ratio": round(r["相對倍數"], 2),
-            "n": int(r["原民在學數"]),
-        }
-        for _, r in cur.iterrows()
-    ]
-
-    trend = {}
-    for name in TREND_FIELDS:
-        s = field[field["名稱"] == name].sort_values("學年度")
-        trend[name.replace("學門", "")] = [round(float(v), 3) for v in s["相對倍數"]]
-
-    growth = pd.read_csv(OUT / "growth_field.csv")
-    shift = [
-        {
-            "name": r["名稱"].replace("學門", ""),
-            "d": round(r["相對倍數變化"], 2),
-            "a": round(r["相對倍數_106"], 2),
-            "b": round(r["相對倍數_114"], 2),
-            "ind_g": round(r["原民_成長率"] * 100, 1),
-            "gen_g": round(r["一般生_成長率"] * 100, 1),
-        }
-        for _, r in growth.sort_values("相對倍數變化", ascending=False).iterrows()
-    ]
-
-    gmajor = pd.read_csv(OUT / "growth_major.csv")
-    gmajor = gmajor[gmajor["原民_114"] >= 200].copy()
-    major = [
-        {
-            "name": r["名稱"].replace("細學類", ""),
-            "n06": int(r["原民_106"]),
-            "n14": int(r["原民_114"]),
-            "ind_g": round(r["原民_成長率"] * 100, 1),
-            "gen_g": round(r["一般生_成長率"] * 100, 1),
-            "a": round(r["相對倍數_106"], 2),
-            "b": round(r["相對倍數_114"], 2),
-            "d": round(r["相對倍數變化"], 2),
-        }
-        for _, r in gmajor.sort_values("原民_114", ascending=False).iterrows()
-    ]
-
-    # 小倍數圖：原民生最多的 12 個細學類，兩群人各自的指數走勢
-    tr = pd.read_csv(OUT / "trend_major.csv", dtype={"代碼": str})
-    top = tr[tr["學年度"] == tr["學年度"].max()].nlargest(12, "原民在學數")["代碼"]
-    panels = []
-    for code in top:
-        s = tr[tr["代碼"] == code].sort_values("學年度")
-        panels.append({
-            "name": s["名稱"].iloc[-1].replace("細學類", ""),
-            "n": int(s["原民在學數"].iloc[-1]),
-            "ind": [round(float(v), 1) for v in s["原民指數"]],
-            "gen": [None if pd.isna(v) else round(float(v), 1) for v in s["一般生指數"]],
-        })
-
-    data = {
-        "panels": {"years": [int(y) for y in sorted(tr["學年度"].unique())], "items": panels},
-        "totals": totals(field),
-        "gap": gap,
-        "trend": {"years": totals(field)["years"], "series": trend},
-        "shift": shift,
-        "major": major,
+    files = {
+        "narrative.json": {"totals": totals(field), "trendFields": TREND_FIELDS},
+        "fields.json": {"years": years, "levels": LEVELS,
+                        "items": pack_categories(field, "學門")},
+        "majors.json": {"years": years, "levels": LEVELS,
+                        "items": pack_categories(major, "細學類")},
+        "schools.json": pack_schools(),
     }
-    path = OUT / "report_data.json"
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
-
-    # 把資料塞進報告頁模板。模板本身沒有 doctype／head，是給 Artifact 用的片段；
-    # GitHub Pages 需要完整文件，尤其是 meta charset，少了中文會變亂碼。
-    html = (ROOT / "report_template.html").read_text(encoding="utf-8")
-    compact = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
-    fragment = html.replace("__DATA__", compact)
-    (OUT / "report.html").write_text(fragment, encoding="utf-8")
 
     DOCS.mkdir(exist_ok=True)
-    # 用 replace 不用 format：片段裡滿是 CSS／JS 的大括號，format 會直接爆掉
-    (DOCS / "index.html").write_text(PAGE.replace("{body}", fragment), encoding="utf-8")
+    (DOCS / "data").mkdir(exist_ok=True)
     (DOCS / ".nojekyll").write_text("", encoding="utf-8")
+    (DOCS / "index.html").write_text(
+        (ROOT / "report_template.html").read_text(encoding="utf-8"), encoding="utf-8")
 
-    print(f"{path.name}：{len(gap)} 學門、{len(major)} 細學類（原民≥200 人）")
-    print("report.html / docs/index.html：已套入模板")
+    for name, obj in files.items():
+        blob = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+        (DOCS / "data" / name).write_text(blob, encoding="utf-8")
+        print(f"  docs/data/{name:<15} {len(blob.encode())/1024:6.0f} KB")
+
+    print(f"docs/index.html：{len(files['fields.json']['items'])} 學門、"
+          f"{len(files['majors.json']['items'])} 細學類、"
+          f"{len(files['schools.json']['items'])} 所學校")
 
 
 if __name__ == "__main__":
