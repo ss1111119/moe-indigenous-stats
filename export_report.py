@@ -92,6 +92,26 @@ def pack_schools() -> dict:
             "items": sorted(schools.values(), key=lambda r: r["n"])}
 
 
+def pack_gender() -> dict:
+    """性別：每個等級別逐年的原民／一般生男女人數（104–114 學年）。"""
+    g = pd.read_csv(OUT / "gender.csv")
+    years = sorted(int(y) for y in g["學年度"].unique())
+    order = ["博士班", "碩士班", "學士班", "二專", "五專"]
+    items = []
+    for lv in order:
+        s = g[g["等級別"] == lv].set_index("學年度")
+        if s.empty:
+            continue
+        items.append({
+            "lv": lv,
+            "im": [int(s.loc[y, "原民_男"]) for y in years],
+            "if_": [int(s.loc[y, "原民_女"]) for y in years],
+            "gm": [int(s.loc[y, "一般生_男"]) for y in years],
+            "gf": [int(s.loc[y, "一般生_女"]) for y in years],
+        })
+    return {"years": years, "items": items}
+
+
 def totals(field: pd.DataFrame) -> dict:
     f = field[(field["等級別"] == "總計") & field["可比"]]
     t = f.groupby("學年度")[["原民在學數", "一般生在學數"]].sum()
@@ -122,6 +142,7 @@ def main() -> None:
         "majors.json": {"years": years, "levels": LEVELS,
                         "items": pack_categories(major, "細學類")},
         "schools.json": pack_schools(),
+        "gender.json": pack_gender(),
     }
 
     DOCS.mkdir(exist_ok=True)

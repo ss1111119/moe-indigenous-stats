@@ -22,6 +22,7 @@
 | [`data/fields.json`](https://ss1111119.github.io/moe-indigenous-stats/data/fields.json) | 27 學門 × 9 年 × 6 等級別的原民／一般生人數 | 15 KB |
 | [`data/majors.json`](https://ss1111119.github.io/moe-indigenous-stats/data/majors.json) | 169 細學類，同上結構 | 84 KB |
 | [`data/schools.json`](https://ss1111119.github.io/moe-indigenous-stats/data/schools.json) | 240 校 × 等級別 × 104–113 學年，附全國占比對照 | 67 KB |
+| [`data/gender.json`](https://ss1111119.github.io/moe-indigenous-stats/data/gender.json) | 5 等級別 × 104–114 學年的原民／一般生男女人數 | 1 KB |
 
 送的是**原始人數**，占比、指數、相對倍數一律在前端算——所以換等級別時
 所有圖表用同一套公式重算，口徑不會分岔。`cmp: 0` 表示該類不可比（見下方 999 說明），
@@ -52,6 +53,7 @@ python fetch.py ebooks sdata   # 出版品 xls/xlsx + 各校科系別概況（�
 python build.py                # 校別／年級層級
 python build_field.py          # 學門與細學類層級
 python build_trend.py          # 逐年指數序列
+python build_gender.py         # 性別結構（等級別層級）
 python export_report.py        # 報告頁 → docs/
 
 python -m http.server -d docs 8000   # 本機預覽
@@ -73,6 +75,7 @@ python -m http.server -d docs 8000   # 本機預覽
 | `out/compare_by_school.csv` | 學年度 × **學校** × 等級別（104–113） |
 | `out/compare_national.csv` | 學年度 × 等級別，全國彙總 |
 | `out/compare_grade.csv` | 學年度 × 等級別 × 年級（含延修生） |
+| `out/gender.csv` | 學年度 × 等級別 × 性別（104–114），原民／一般生女性占比 |
 
 **「一般生」＝全體學生 − 原住民學生**，與教育部提要分析口徑一致。
 註：原民端含空大／宗教研修學院、全體端不含，相減會多扣約 0.14% 的全體人數。
@@ -141,6 +144,12 @@ opendata 的部分（`fetch.py` 的 key）：
 - **博碩士的「延修生」不可比**：全體檔那兩欄一律為 0（研究生不用該欄表示），原民檔卻有值。`compare_grade.csv` 已濾掉分母為 0 的列。
 - **`A1-1` 只到 113 學年**，`A2-3` 到 114；校別分析上限是 113。
 - **族籍別**在出版品 `A1-2`，本專案尚未解析。
+- **性別只交叉到等級別**。出版品的 `A1-3`（學門）與 `A1-4`（科系）都沒有性別欄，
+  全體端的 `sdata` 也沒有——所以「原民生念什麼科系、男女差在哪」在公開資料裡做不出來。
+  教育部的互動圖表有 114 學年前 10 大細學類按性別分，但沒有對應的開放資料。
+  （`graduates.json`／[dataset 9619](https://data.gov.tw/dataset/9619) 有科系 × 性別，
+  但只有**畢業生**且只有**全體**，原民端仍是空的，湊不成對比。）
+  性別這一塊的口徑反而比學門分析乾淨：兩邊都只含大專校院，沒有分子分母範圍不一致的問題。
 
 ### 併表時做的正規化
 

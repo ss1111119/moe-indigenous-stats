@@ -159,6 +159,10 @@ h2{margin:0; font-size:clamp(21px,3vw,27px); font-weight:640; letter-spacing:-.0
 .pan .b100{stroke:var(--muted); stroke-width:1; stroke-dasharray:2 3; opacity:.6}
 .pan .brk{stroke-dasharray:3 3; opacity:.55}
 .pan .ptick,.pan .yr{fill:var(--muted); font-size:8px; font-family:ui-monospace,Consolas,monospace}
+/* 性別只有 5 格，用 gap 當分隔線的話最後一列會留一塊灰色空格；
+   改成窄一點的欄寬讓五格排成一列，並把分隔線畫在格子上而非背景。 */
+#gpanels{grid-template-columns:repeat(auto-fit,minmax(186px,1fr)); gap:0; background:none}
+#gpanels .pan{box-shadow:1px 0 0 0 var(--rule), 0 1px 0 0 var(--rule)}
 
 /* ---------- controls ---------- */
 .bar{display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; margin-bottom:14px}
@@ -377,6 +381,31 @@ footer{margin-top:56px; border-top:1px solid var(--rule); background:var(--surfa
     </div>
   </section>
 
+  <section id="gender">
+    <div class="sec-head">
+      <div class="eyebrow">性別</div>
+      <h2>每一個學制，原民生的女性比例都高於一般生</h2>
+      <p class="note">
+        虛線是 <b>50%</b>。碩士班差距最大——原民碩士生近六成二是女性，一般生不到五成。
+        但學士班的差距九年來一路收斂，而且是原民這一側自己在往下走。
+        這一區列出各等級別，不受上方切換器影響。
+      </p>
+    </div>
+    <div class="card">
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--ind)"></i>原住民學生</span>
+        <span><i class="swatch" style="background:var(--gen)"></i>一般生</span>
+        <span class="dashnote">縱軸為女性占該群人數的比例</span>
+      </div>
+      <div class="grid" id="gpanels"></div>
+    </div>
+    <p class="note" style="margin-top:14px">
+      性別只交叉到等級別。出版品的 <code>A1-3</code>（學門）與 <code>A1-4</code>（科系）都沒有性別欄，
+      全體端的科系檔也沒有——所以<b>「原民生念什麼科系、男女差在哪」在公開資料裡做不出來</b>。
+      教育部那張互動圖表有 114 學年的前 10 大細學類按性別分，但沒有對應的開放資料。
+    </p>
+  </section>
+
   <section id="schools">
     <div class="sec-head">
       <div class="eyebrow">校別查詢</div>
@@ -467,8 +496,8 @@ function hoverable(el, html){
   el.addEventListener("pointerleave", hideTip);
 }
 
-const [N, F, M, S] = await Promise.all(
-  ["narrative", "fields", "majors", "schools"]
+const [N, F, M, S, G] = await Promise.all(
+  ["narrative", "fields", "majors", "schools", "gender"]
     .map(n => fetch(`data/${n}.json`).then(r => r.json())));
 
 const YEARS = F.years, Y0 = 0, Y1 = YEARS.length - 1;
@@ -841,6 +870,48 @@ document.querySelectorAll("#btable th.s").forEach(th => {
     browser();
   });
 });
+
+/* ============ 性別：五個學制的女性占比 ============ */
+(function gender(){
+  const host = $("#gpanels"), GY = G.years, gi = GY.length - 1;
+  const W = 230, H = 108, ml = 26, mr = 8, mt = 10, mb = 14;
+  const LO = 25, HI = 90;                              // 女性占比的顯示範圍
+  const X = i => ml + i * (W - ml - mr) / (GY.length - 1);
+  const Y = v => mt + (1 - (v - LO) / (HI - LO)) * (H - mt - mb);
+  const line = (v, color) =>
+    `<path class="ser" stroke="${color}" d="${v.map((p, i) => `${i ? "L" : "M"}${X(i)} ${Y(p)}`).join(" ")}"/>`;
+
+  host.innerHTML = G.items.map(it => {
+    const ind = it.im.map((m, i) => it.if_[i] / (m + it.if_[i]) * 100);
+    const gen = it.gm.map((m, i) => it.gf[i] / (m + it.gf[i]) * 100);
+    let g = "";
+    for (const v of [40, 60, 80]) g += `<line class="bl" x1="${ml}" y1="${Y(v)}" x2="${W - mr}" y2="${Y(v)}"/>`;
+    g += `<line class="b100" x1="${ml}" y1="${Y(50)}" x2="${W - mr}" y2="${Y(50)}"/>`;
+    for (const v of [80, 60, 50, 40]) g += `<text class="ptick" x="${ml - 5}" y="${Y(v) + 3}" text-anchor="end">${v}</text>`;
+    g += `<line class="bl" x1="${ml}" y1="${mt}" x2="${ml}" y2="${H - mb}"/>`
+       + line(gen, "var(--gen)") + line(ind, "var(--ind)")
+       + `<circle cx="${X(gi)}" cy="${Y(ind[gi])}" r="3" fill="var(--ind)" stroke="var(--surface)" stroke-width="1.5"/>`
+       + `<text class="yr" x="${ml}" y="${H - 3}">${GY[0]}</text>`
+       + `<text class="yr" x="${W - mr}" y="${H - 3}" text-anchor="end">${GY[gi]}</text>`;
+    const gap = ind[gi] - gen[gi];
+    return `<div class="pan">
+      <div class="t"><b>${it.lv}</b><span>${(it.im[gi] + it.if_[gi]).toLocaleString()} 人</span></div>
+      <svg viewBox="0 0 ${W} ${H}" role="img"
+        aria-label="${it.lv}：${GY[gi]} 學年原民女性占比 ${ind[gi].toFixed(1)}%、一般生 ${gen[gi].toFixed(1)}%">${g}</svg>
+      <div class="f"><span><i style="background:var(--ind)"></i>${ind[gi].toFixed(1)}%</span>
+        <span><i style="background:var(--gen)"></i>${gen[gi].toFixed(1)}%</span>
+        <span style="margin-left:auto"><span class="pill ${cls(gap)}">${gap > 0 ? "+" : ""}${gap.toFixed(1)}pp</span></span></div>
+    </div>`;
+  }).join("");
+
+  G.items.forEach((it, k) => {
+    const ind = it.im.map((m, i) => it.if_[i] / (m + it.if_[i]) * 100);
+    const gen = it.gm.map((m, i) => it.gf[i] / (m + it.gf[i]) * 100);
+    hoverable(host.children[k],
+      `<b>${it.lv}・女性占比</b>` + GY.map((y, i) =>
+        `<div class="r"><span>${y}</span><span>原民 ${ind[i].toFixed(1)}%　一般 ${gen[i].toFixed(1)}%</span></div>`).join(""));
+  });
+})();
 
 /* ============ 校別查詢 ============ */
 (function schools(){
