@@ -1,0 +1,10 @@
+# 原始下載檔約 71MB，fetch.py 可完整重建
+data/
+
+# 衍生的 CSV 有進版控（讓人不用跑 pipeline 就能用），
+# 但報告頁的中間產物不用——docs/index.html 才是要發佈的那份
+out/report.html
+out/report_data.json
+
+__pycache__/
+*.pyc
