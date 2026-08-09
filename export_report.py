@@ -112,6 +112,34 @@ def pack_gender() -> dict:
     return {"years": years, "items": items}
 
 
+def pack_ethnicity() -> dict:
+    """族籍別：每族逐年的等級別 × 性別人數（104–114 學年）。
+
+    另外附上一般生的學位結構當外部錨點——族籍本身沒有一般生對照，
+    但「原民整體 vs 一般生」的落差是讀這一區的必要背景。
+    """
+    e = pd.read_csv(OUT / "ethnicity.csv")
+    years = sorted(int(y) for y in e["學年度"].unique())
+    items = []
+    for name, g in e[e["族籍別"] != "總計"].groupby("族籍別"):
+        d = {}
+        for lv, gl in g.groupby("等級別"):
+            p = gl.pivot_table(index="學年度", columns="性別", values="在學數",
+                               aggfunc="sum").reindex(years).fillna(0)
+            d[lv] = [[int(v) for v in p.get("男", 0)], [int(v) for v in p.get("女", 0)]]
+        items.append({"n": name, "d": d})
+    items.sort(key=lambda r: -sum(x[-1] for x in r["d"]["總計"]))
+
+    nat = pd.read_csv(OUT / "compare_national.csv")
+    c = nat[nat["學年度"] == nat["學年度"].max()].set_index("等級別")
+    gen = c["全體在學數"] - c["原住民在學數"]
+    ref = {
+        "genGrad": round(float((gen["博士班"] + gen["碩士班"]) / gen.sum() * 100), 1),
+        "gen5": round(float(gen["五專"] / gen.sum() * 100), 1),
+    }
+    return {"years": years, "items": items, "ref": ref}
+
+
 def totals(field: pd.DataFrame) -> dict:
     f = field[(field["等級別"] == "總計") & field["可比"]]
     t = f.groupby("學年度")[["原民在學數", "一般生在學數"]].sum()
@@ -143,6 +171,7 @@ def main() -> None:
                         "items": pack_categories(major, "細學類")},
         "schools.json": pack_schools(),
         "gender.json": pack_gender(),
+        "ethnicity.json": pack_ethnicity(),
     }
 
     DOCS.mkdir(exist_ok=True)

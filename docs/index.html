@@ -125,6 +125,10 @@ h2{margin:0; font-size:clamp(21px,3vw,27px); font-weight:640; letter-spacing:-.0
   transform:translate(-50%,-50%); box-shadow:0 0 0 2px var(--surface)}
 .dot.i{background:var(--ind)} .dot.g{background:var(--gen)}
 .row:hover .dot{box-shadow:0 0 0 2px var(--surface-2)}
+.ebar{position:absolute; top:50%; height:11px; transform:translateY(-50%); left:0;
+  background:var(--ind); border-radius:0 3px 3px 0}
+.eref{position:absolute; top:1px; bottom:1px; width:1px; background:var(--ink-2); opacity:.5}
+.eref.g{background:var(--neg); opacity:.65}
 .dv{position:relative; height:20px}
 .dv .zero{position:absolute; top:0; bottom:0; width:1px; background:var(--rule)}
 .dv .b{position:absolute; top:50%; height:11px; transform:translateY(-50%)}
@@ -381,6 +385,33 @@ footer{margin-top:56px; border-top:1px solid var(--rule); background:var(--surfa
     </div>
   </section>
 
+  <section id="ethnic">
+    <div class="sec-head">
+      <div class="eyebrow">族籍別</div>
+      <h2>「原住民」不是一個群體</h2>
+      <p class="note">
+        原民生念到研究所的比例是 <b id="eInd">—</b>，一般生 <b id="eGen">—</b>，大約一半。
+        但把各族拆開看，人數千人以上的族群之間就差 <b id="eSpread">—</b>——
+        用一個平均數代表所有族群，蓋掉的差距不比它跟一般生的差距小多少。
+        這一區沒有一般生對照（一般生沒有族籍），只有原民內部比較。
+      </p>
+    </div>
+    <div class="card">
+      <div class="legend">
+        <span><i class="swatch bar" style="background:var(--ind)"></i>該族念研究所（博＋碩）的比例</span>
+        <span><i style="display:inline-block;width:1px;height:12px;background:var(--ink-2);opacity:.5"></i>&nbsp;原民整體</span>
+        <span><i style="display:inline-block;width:1px;height:12px;background:var(--neg);opacity:.65"></i>&nbsp;一般生</span>
+        <span class="dashnote">灰色＝該族大專生不足 100 人，比例不穩定</span>
+      </div>
+      <div class="rows" id="ethnicRows"></div>
+    </div>
+    <p class="note" style="margin-top:14px">
+      這裡看的是<b>結構</b>不是<b>機會</b>：要算「某族有多少比例的人念到大學」需要各族人口數，
+      那份資料在原住民族委員會、不在教育部統計裡，本專案沒有接。
+      所以上面只能說「已經在念大專的人裡，學位層級怎麼分布」。
+    </p>
+  </section>
+
   <section id="gender">
     <div class="sec-head">
       <div class="eyebrow">性別</div>
@@ -496,8 +527,8 @@ function hoverable(el, html){
   el.addEventListener("pointerleave", hideTip);
 }
 
-const [N, F, M, S, G] = await Promise.all(
-  ["narrative", "fields", "majors", "schools", "gender"]
+const [N, F, M, S, G, E] = await Promise.all(
+  ["narrative", "fields", "majors", "schools", "gender", "ethnicity"]
     .map(n => fetch(`data/${n}.json`).then(r => r.json())));
 
 const YEARS = F.years, Y0 = 0, Y1 = YEARS.length - 1;
@@ -870,6 +901,72 @@ document.querySelectorAll("#btable th.s").forEach(th => {
     browser();
   });
 });
+
+/* ============ 族籍別：各族的學位結構 ============ */
+(function ethnic(){
+  const host = $("#ethnicRows"), ei = E.years.length - 1;
+  const sum = (o, lv) => o.d[lv] ? o.d[lv][0][ei] + o.d[lv][1][ei] : 0;
+
+  const data = E.items.map(o => {
+    const tot = sum(o, "總計");
+    return {
+      n: o.n, tot,
+      grad: tot ? (sum(o, "博士班") + sum(o, "碩士班")) / tot * 100 : 0,
+      f: tot ? o.d["總計"][1][ei] / tot * 100 : 0,
+      small: tot < 100,
+    };
+  }).filter(d => d.tot > 0);
+
+  const allTot = data.reduce((s, d) => s + d.tot, 0);
+  const allGrad = data.reduce((s, d) => s + d.grad / 100 * d.tot, 0) / allTot * 100;
+  $("#eInd").textContent = allGrad.toFixed(1) + "%";
+  $("#eGen").textContent = E.ref.genGrad.toFixed(1) + "%";
+
+  // 人數不足 100 的族群，比例是幾個人在跳動——照比例排會讓雜訊占滿前幾名，
+  // 所以另外分一區、按人數排，不參與名次。
+  const big = data.filter(d => !d.small).sort((a, b) => b.grad - a.grad);
+  const small = data.filter(d => d.small).sort((a, b) => b.tot - a.tot);
+  $("#eSpread").textContent =
+    (big[0].grad / big[big.length - 1].grad).toFixed(1) + " 倍";
+
+  // 刻度含小樣本族群，寧可長條短一點也不要截斷——截斷的長條會讀成「爆表」
+  const max = Math.max(E.ref.genGrad, ...data.map(d => d.grad)) * 1.06;
+  const at = v => (v / max * 100).toFixed(2);
+  host.innerHTML =
+    `<div class="row hdr"><div class="lab">族籍別</div>
+       <div class="lab" style="text-align:left">研究所占該族大專生比例</div>
+       <div class="num">研究所</div><div class="num">大專生</div><div class="num col-ratio">女性</div></div>`;
+  [...big, null, ...small].forEach(d => {
+    if (d === null){
+      host.insertAdjacentHTML("beforeend",
+        `<div class="row hdr" style="margin-top:14px"><div class="lab">以下人數過少</div>
+         <div class="lab" style="text-align:left">比例僅供參考，不列入名次</div>
+         <div class="num">研究所</div><div class="num">大專生</div><div class="num col-ratio">女性</div></div>`);
+      return;
+    }
+    const el = document.createElement("div");
+    el.className = "row";
+    el.innerHTML =
+      `<div class="lab">${d.n}</div>
+       <div class="track">
+         <div class="base"></div>
+         <div class="ebar" style="width:${at(d.grad)}%;${d.small ? "background:var(--gen)" : ""}"></div>
+         <div class="eref" style="left:${at(allGrad)}%"></div>
+         <div class="eref g" style="left:${at(E.ref.genGrad)}%"></div>
+       </div>
+       <div class="num hi">${d.grad.toFixed(1)}</div>
+       <div class="num">${d.tot.toLocaleString()}</div>
+       <div class="num col-ratio">${d.f.toFixed(0)}%</div>`;
+    hoverable(el,
+      `<b>${d.n}・${E.years[ei]} 學年</b>
+       <div class="r"><span>大專在學</span><span>${d.tot.toLocaleString()} 人</span></div>
+       <div class="r"><span>研究所占比</span><span>${d.grad.toFixed(1)}%</span></div>
+       <div class="r"><span>原民整體</span><span>${allGrad.toFixed(1)}%</span></div>
+       <div class="r"><span>一般生</span><span>${E.ref.genGrad.toFixed(1)}%</span></div>
+       ${d.small ? `<div class="r"><span colspan="2">人數不足 100，比例不穩定</span></div>` : ""}`);
+    host.appendChild(el);
+  });
+})();
 
 /* ============ 性別：五個學制的女性占比 ============ */
 (function gender(){

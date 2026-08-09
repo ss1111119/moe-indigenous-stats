@@ -8,6 +8,7 @@
 先跑 fetch.py 把 data/ 準備好。
 """
 
+import re
 import sys
 from pathlib import Path
 
@@ -45,6 +46,40 @@ A23_LEVEL = {
 }
 
 
+# 學校代碼固定 4 碼，可能夾英文：0001 一般、0A01 附設進修專校、1R02 宗教研修學院
+CODE_RE = re.compile(r"[0-9][0-9A-Za-z]{3}")
+
+
+def isnum(x) -> bool:
+    try:
+        float(str(x).replace(",", ""))
+        return True
+    except ValueError:
+        return False
+
+
+def to_float(x) -> float:
+    """出版品的數字有時是文字、有時是數值，缺值是「-」之類的符號。"""
+    return float(str(x).replace(",", "")) if isnum(x) else 0.0
+
+
+def read_sheet(path: Path, sheet: str) -> list:
+    """.xls 走 xlrd、.xlsx 走 openpyxl；工作表名稱容許前後空白（113 學年是 'A1-1 '）。"""
+    if path.suffix == ".xls":
+        import xlrd
+
+        wb = xlrd.open_workbook(path)
+        name = next(s for s in wb.sheet_names() if s.strip() == sheet)
+        ws = wb.sheet_by_name(name)
+        return [[c.value for c in ws.row(i)] for i in range(ws.nrows)]
+
+    from openpyxl import load_workbook
+
+    wb = load_workbook(path, read_only=True, data_only=True)
+    name = next(s for s in wb.sheetnames if s.strip() == sheet)
+    return [list(r) for r in wb[name].iter_rows(values_only=True)]
+
+
 def to_num(s: pd.Series) -> pd.Series:
     """開放資料的數字是字串，缺值用 '-' 之類的符號表示。"""
     return pd.to_numeric(s.astype(str).str.replace(",", ""), errors="coerce").fillna(0)
@@ -55,8 +90,51 @@ def pad_code(s: pd.Series) -> pd.Series:
     return s.astype(str).str.strip().str.zfill(4)
 
 
+def parse_ebook_a11(path: Path, year: int) -> pd.DataFrame:
+    """出版品的表 A1-1（按等級別與校別分）→ 長表。
+
+    opendata 的 A1-1 只更新到 113 學年，但出版品每年都有這張表，
+    所以 114 學年的校別資料要從這裡拿。
+
+    版面：學校類別是一列只有名稱＋數字的標題列，其下才是「代碼＋校名＋數字」的
+    學校列，靠第 2 個非空欄位是不是字串來分辨。數字欄依序為
+    在學總計 + 5 個等級，接著畢業總計 + 5 個等級。
+    """
+    raw = read_sheet(path, "A1-1")
+
+    rows, category = [], None
+    for r in raw:
+        cells = [c for c in r if c not in (None, "")]
+        if len(cells) < 7:
+            continue
+        head = str(cells[0]).strip()
+        # 類別小計列：校名的位置是數字。學校列：校名是非數字的文字。
+        if isnum(cells[1]):
+            if head != "總計":
+                category = head
+            continue
+        # 學校代碼是 4 碼，可能夾英文（0A01 附設進修專校、1R02 宗教研修學院）；
+        # 沒有前導零的代碼會被存成數字，所以先轉字串再補零。
+        code = head if not isnum(head) else str(int(float(head)))
+        if not CODE_RE.fullmatch(code.zfill(4)) or len(cells) < 8:
+            continue
+        for i, lv in enumerate(LEVELS):            # cells[2] 是在學總計，跳過
+            rows.append({
+                "學年度": str(year), "學校類別": category,
+                "學校代碼": code, "學校名稱": str(cells[1]).strip(), "等級別": lv,
+                "原住民在學數": to_float(cells[3 + i]),
+            })
+    if not rows:
+        raise ValueError(f"{path.name} 的 A1-1 解析不到任何學校列")
+    return pd.DataFrame(rows)
+
+
 def load_indigenous() -> pd.DataFrame:
-    """A1-1 → 長表：學年度 / 學校代碼 / 學校名稱 / 等級別 / 原住民在學數。"""
+    """A1-1 → 長表：學年度 / 學校代碼 / 學校名稱 / 等級別 / 原住民在學數。
+
+    以 opendata 為主，出版品只用來補 opendata 還沒涵蓋的學年度；
+    重疊的年份會拿來對帳，數字不合就出聲，避免版面解析錯了卻沒人發現。
+    """
     df = pd.read_json(DATA / "indigenous_students_A1-1.json", dtype=str)
     cols = {f"在學學生人數_{lv}": lv for lv in LEVELS}
     for c in cols:
@@ -70,7 +148,36 @@ def load_indigenous() -> pd.DataFrame:
     long["等級別"] = long["等級別"].map(cols)
     long["學校代碼"] = pad_code(long["學校代碼"])
     long["學年度"] = long["學年度"].astype(str)
-    return long
+
+    have = set(long["學年度"])
+    extra = []
+    for path in sorted((DATA / "ebook").glob("*indigenous.xls*")):
+        year = int(path.name[:3])
+        try:
+            e = parse_ebook_a11(path, year)
+        except Exception as exc:
+            print(f"  ! {path.name} A1-1 解析失敗：{exc}")
+            continue
+        e["學校代碼"] = pad_code(e["學校代碼"])
+        if str(year) in have:
+            check(long, e, year)
+        else:
+            extra.append(e)
+            print(f"  + {year} 學年校別資料取自出版品 A1-1（opendata 尚未更新）")
+    return pd.concat([long, *extra], ignore_index=True) if extra else long
+
+
+def check(opendata: pd.DataFrame, ebook: pd.DataFrame, year: int) -> None:
+    """重疊年份對帳：出版品解析的結果應該和 opendata 完全相同。"""
+    key = ["學校代碼", "等級別"]
+    a = opendata[opendata["學年度"] == str(year)].set_index(key)["原住民在學數"]
+    b = ebook.set_index(key)["原住民在學數"]
+    common = a.index.intersection(b.index)
+    diff = (a.loc[common] - b.loc[common]).abs()
+    bad = int((diff > 0.5).sum())
+    if bad or len(a) != len(b):
+        print(f"  ! {year} 學年出版品與 opendata 不一致："
+              f"{bad} 筆數字不同，列數 {len(a)} vs {len(b)}")
 
 
 def load_all_students() -> pd.DataFrame:
