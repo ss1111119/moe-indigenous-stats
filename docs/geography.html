@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>原民生離開了哪些縣市</title>
+<meta name="description" content="大專原住民學生的出生戶籍地與學校所在地流動（104–114 學年），以及各縣市原住民成年人口的學歷結構。資料來源：教育部統計處、內政部統計處。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>%F0%9F%97%BA</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="head">
+    <nav class="pagenav" aria-label="頁面">
+      <a href="index.html">科系</a>
+      <span aria-current="page">縣市</span>
+    </nav>
+    <div class="eyebrow">教育部統計處・內政部統計處　104–114 學年　大專校院</div>
+    <h1>原民生離開了哪些縣市</h1>
+    <p class="deck">
+      臺東縣有八成的原住民大專生離開臺東念書。這一頁把三件事放在一起看：
+      原民生從哪個縣市來、到哪個縣市念書，以及幾十年下來，
+      各縣市的原住民成年人口累積出什麼樣的學歷結構。
+    </p>
+    <div class="byline">
+      <span>資料：原住民學生概況統計 A1-5／A1-6b ＋ 統計區原住民教育程度人口統計</span>
+      <span><a href="https://github.com/ss1111119/moe-indigenous-stats">原始碼與資料集</a></span>
+    </div>
+  </div>
+</header>
+
+<div class="filter">
+  <div class="inner">
+    <span class="lbl">等級別</span>
+    <div class="seg" id="levelseg" role="group" aria-label="選擇等級別，套用到本頁的流動圖表"></div>
+    <span class="cnt" id="levelcnt"></span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section id="overview">
+    <div class="sec-head">
+      <div class="eyebrow">母體</div>
+      <h2>同一批人，兩種算法</h2>
+      <p class="note">
+        「出生戶籍地」與「學校所在地」是<b>同一個母體的兩種分法</b>——
+        每個學年、每個等級別的全國總計都相等，所以兩者相減得到的淨流動是精確值，
+        不是兩份資料湊出來的估計。
+      </p>
+    </div>
+    <div class="kpis" id="kpis"></div>
+  </section>
+
+  <section id="flow">
+    <div class="sec-head">
+      <div class="eyebrow">流動</div>
+      <h2 id="flowTitle">原鄉送出學生，六都收下</h2>
+      <p class="note">
+        橫軸是人數（0 到全國最大值），每一列的兩個點是同一個縣市的兩個數字：
+        藍點為在該縣市出生設籍的原民生，灰點為在該縣市念書的原民生。
+        <b>兩點距離愈遠，代表該縣市的「生源」與「就學」落差愈大。</b>
+      </p>
+    </div>
+    <div class="card">
+      <div class="bar">
+        <span class="lbl">學年度</span>
+        <div class="seg" id="yearseg" role="group" aria-label="選擇學年度"></div>
+      </div>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--ind)"></i>出生戶籍地</span>
+        <span><i class="swatch" style="background:var(--gen)"></i>學校所在地</span>
+        <span class="dashnote">依淨流動排序，負值在上</span>
+      </div>
+      <div class="rows" id="dumbbell"></div>
+    </div>
+  </section>
+
+  <section id="trend">
+    <div class="sec-head">
+      <div class="eyebrow">走勢</div>
+      <h2>有的縣市在把人留住，有的在加速流失</h2>
+      <p class="note">
+        每格是一個縣市的<b>就學戶籍比</b>（學校所在地人數 ÷ 出生戶籍地人數）逐年變化。
+        虛線是 100%——低於它才讀得成留存率，高於它是淨承接。
+        只顯示 11 年間淨流動絕對值最大的 12 個縣市。<b>每格下方標出當年的人數</b>：
+        切到二專、五專這類人數少的等級別時，比率會被個位數的變動放大，要看著分母讀。
+      </p>
+    </div>
+    <div class="grid" id="panels"></div>
+  </section>
+
+  <section id="stock">
+    <div class="sec-head">
+      <div class="eyebrow">存量 ・ 基準日不同</div>
+      <h2>幾十年下來，原鄉與都會的學歷結構差了兩成</h2>
+      <p class="note">
+        這一區是<b>人口統計的存量</b>，基準日為 <span id="eduPeriod"></span>，
+        <b>不隨上方的等級別切換</b>，也不能跟上面的學年度資料畫在同一條時間軸上。
+        它回答的是另一個問題：已經在社會上的原住民，受過多少教育。
+      </p>
+    </div>
+    <div class="card">
+      <div class="legend" id="eduLegend"></div>
+      <div class="rows" id="edubars"></div>
+    </div>
+  </section>
+
+  <section id="link">
+    <div class="sec-head">
+      <div class="eyebrow">關聯</div>
+      <h2>流失得愈多的縣市，學歷存量也愈低</h2>
+      <p class="note">
+        橫軸是 114 學年的就學戶籍比，縱軸是該縣市原住民成年人口的專科以上比率。
+        點的大小代表該縣市 15 歲以上原住民人口——小點的比率是少數個案算出來的，
+        不宜與大點等量齊觀。<b>這是相關，不是因果</b>——兩者共同受到當地有沒有大專校院、
+        產業結構等因素影響。兩軸的基準日也不同，見下方口徑說明。
+      </p>
+    </div>
+    <div class="card">
+      <div class="chart" id="scatter"></div>
+    </div>
+  </section>
+
+  <section id="caveats">
+    <div class="sec-head">
+      <div class="eyebrow">口徑</div>
+      <h2>用這頁的數字之前</h2>
+    </div>
+    <div class="caveats">
+      <div class="cv">
+        <span class="tag">無對照</span>
+        <h3>這一頁沒有「一般生」可比</h3>
+        <p>全體學生的開放資料沒有出生地，所以本站其他頁面都有的原民／一般生對照，
+           在這一頁做不出來。這裡的數字只能自己跟自己比、縣市之間互相比。</p>
+      </div>
+      <div class="cv">
+        <span class="tag">基準日</span>
+        <h3>流動是學年度，存量是 113 年 12 月底</h3>
+        <p>兩者來自不同機關、不同口徑的統計。流動是教育部的學年度在學人數，
+           存量是內政部的人口統計。可以並列參照，<b>不可以畫在同一條時間軸上</b>，
+           也不能互相當分子分母。</p>
+      </div>
+      <div class="cv">
+        <span class="tag">範圍</span>
+        <h3>流動含空大、進修學校與宗教研修學院</h3>
+        <p>出生戶籍地（A1-5）與學校所在地（A1-6b）採同一範圍，兩者總計相等，
+           相減才有意義。出版品另有不含這些學校的 A1-6a，範圍不同、
+           不可拿去相減，本頁未使用。</p>
+      </div>
+      <div class="cv">
+        <span class="tag">粒度</span>
+        <h3>存量只到縣市，接不回鄉鎮</h3>
+        <p>原始資料的空間單元是「發布區」，其代碼中的鄉鎮碼是平台內部序號，
+           不是行政區代碼，沒有官方對照表就無法還原成鄉鎮市區。</p>
+      </div>
+      <div class="cv">
+        <span class="tag">二專</span>
+        <h3>這一頁沒有 109 學年的二專斷點</h3>
+        <p>本站其他頁面標註的二專口徑斷點，起因是 109 學年附設進修專校併回母校。
+           本頁範圍含進修學校，那次搬家在總數上互相抵銷，二專全國
+           961 → 935 → 1010 平滑，因此該警語不適用於這一頁。</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="foot">
+    <p>流動：教育部統計處《大專校院原住民學生概況統計》表 A1-5、A1-6b。
+       存量：內政部統計處《統計區原住民 15 歲以上人口十歲年齡組與性別與教育程度人口統計》，
+       經社會經濟資料服務平台供應。</p>
+    <p>解析程式、完整 CSV 與口徑說明：
+       <a href="https://github.com/ss1111119/moe-indigenous-stats">ss1111119/moe-indigenous-stats</a></p>
+  </div>
+</footer>
+
+<div id="tip" role="status" aria-live="polite"></div>
+
+<script>
+(async function(){
+"use strict";
+
+const $ = s => document.querySelector(s);
+const tip = $("#tip");
+const fmt = v => v == null ? "—" : v.toLocaleString();
+const pct1 = v => v.toFixed(1) + "%";
+
+function showTip(html, ev){
+  tip.innerHTML = html; tip.classList.add("on");
+  const r = tip.getBoundingClientRect();
+  let x = ev.clientX + 14, y = ev.clientY + 14;
+  if (x + r.width > innerWidth - 8) x = ev.clientX - r.width - 14;
+  if (y + r.height > innerHeight - 8) y = ev.clientY - r.height - 14;
+  tip.style.left = x + "px"; tip.style.top = y + "px";
+}
+const hideTip = () => tip.classList.remove("on");
+function hoverable(el, html){
+  el.addEventListener("pointermove", e => showTip(html, e));
+  el.addEventListener("pointerleave", hideTip);
+}
+const svgEl = (t, a) => {
+  const e = document.createElementNS("http://www.w3.org/2000/svg", t);
+  for (const k in a) e.setAttribute(k, a[k]);
+  return e;
+};
+
+const G = await fetch("data/geography.json").then(r => r.json());
+const YEARS = G.years, LAST = YEARS.length - 1;
+let LEVEL = "總計", YI = LAST;
+
+/* 專科以上＝專科＋大學院校＋碩士＋博士。labels 的順序由 export_report.py 固定，
+   這裡依名稱取索引，不依位置——欄位順序若變動，寧可壞掉也不要靜默算錯。 */
+const EDU_LAB = G.edu.labels;
+const TERTIARY = ["博士", "碩士", "大學院校", "專科"].map(n => {
+  const i = EDU_LAB.indexOf(n);
+  if (i < 0) throw new Error("教育程度欄位缺少：" + n);
+  return i;
+});
+const eduByName = new Map(G.edu.items.map(r => [r.n, r]));
+const tertiaryPct = n => {
+  const r = eduByName.get(n); if (!r) return null;
+  const tot = r.v.reduce((a, b) => a + b, 0);
+  return tot ? TERTIARY.reduce((a, i) => a + r.v[i], 0) / tot * 100 : null;
+};
+
+/* 取某等級別、某年的各縣市流動 */
+function rowsAt(lv, yi){
+  return G.counties.filter(c => c.d[lv]).map(c => {
+    const birth = c.d[lv][0][yi], school = c.d[lv][1][yi];
+    return { n: c.n, birth, school, net: school - birth,
+             ratio: birth ? school / birth * 100 : null };
+  });
+}
+
+/* ============ 切換器 ============ */
+(function controls(){
+  const seg = $("#levelseg");
+  seg.innerHTML = G.levels.map(l =>
+    `<button type="button" data-l="${l}" aria-pressed="${l === LEVEL}">${l}</button>`).join("");
+  seg.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    LEVEL = b.dataset.l;
+    seg.querySelectorAll("button").forEach(x =>
+      x.setAttribute("aria-pressed", String(x.dataset.l === LEVEL)));
+    render();
+  });
+  const ys = $("#yearseg");
+  ys.innerHTML = YEARS.map((y, i) =>
+    `<button type="button" data-i="${i}" aria-pressed="${i === YI}">${y}</button>`).join("");
+  ys.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    YI = +b.dataset.i;
+    ys.querySelectorAll("button").forEach(x =>
+      x.setAttribute("aria-pressed", String(+x.dataset.i === YI)));
+    render();
+  });
+})();
+
+/* ============ KPI ============ */
+function kpis(rows){
+  const total = rows.reduce((a, r) => a + r.birth, 0);
+  const out = rows.reduce((a, b) => a.net < b.net ? a : b);
+  const inn = rows.reduce((a, b) => a.net > b.net ? a : b);
+  const cells = [
+    ["全國原民生", fmt(total),
+     `${YEARS[YI]} 學年　${LEVEL}`],
+    ["淨流出最多", out.n,
+     `<b class="down">${fmt(out.net)} 人</b>　就學戶籍比 ${out.ratio == null ? "—" : pct1(out.ratio)}`],
+    ["淨承接最多", inn.n,
+     `<b class="up">+${fmt(inn.net)} 人</b>　就學戶籍比 ${inn.ratio == null ? "—" : pct1(inn.ratio)}`],
+  ];
+  $("#kpis").innerHTML = cells.map(([k, v, d]) =>
+    `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+}
+
+/* ============ 流動：啞鈴圖 ============ */
+function dumbbell(rows){
+  const max = Math.max(1, ...rows.map(r => Math.max(r.birth, r.school)));
+  const sorted = [...rows].sort((a, b) => a.net - b.net);
+  const host = $("#dumbbell");
+  host.innerHTML = "";
+  host.style.setProperty("--cols", "");
+
+  const head = document.createElement("div");
+  head.className = "row hdr";
+  head.style.gridTemplateColumns = "84px 1fr 74px 74px 78px";
+  head.innerHTML = `<div class="lab">縣市</div><div></div>
+    <div class="num">出生戶籍地</div><div class="num">學校所在地</div><div class="num">淨流動</div>`;
+  host.appendChild(head);
+
+  for (const r of sorted){
+    const el = document.createElement("div");
+    el.className = "row";
+    el.style.gridTemplateColumns = "84px 1fr 74px 74px 78px";
+    const a = r.birth / max * 100, b = r.school / max * 100;
+    const lo = Math.min(a, b), hi = Math.max(a, b);
+    el.innerHTML = `
+      <div class="lab">${r.n}</div>
+      <div class="track">
+        <div class="base"></div>
+        <div class="conn" style="left:${lo}%; width:${hi - lo}%"></div>
+        <div class="dot i" style="left:${a}%"></div>
+        <div class="dot g" style="left:${b}%"></div>
+      </div>
+      <div class="num">${fmt(r.birth)}</div>
+      <div class="num">${fmt(r.school)}</div>
+      <div class="num hi"><span class="pill ${r.net > 0 ? "p" : r.net < 0 ? "n" : "z"}">${
+        r.net > 0 ? "+" : ""}${fmt(r.net)}</span></div>`;
+    hoverable(el, `<b>${r.n}</b>　${YEARS[YI]} 學年・${LEVEL}<br>
+      出生戶籍地 ${fmt(r.birth)} 人<br>學校所在地 ${fmt(r.school)} 人<br>
+      就學戶籍比 ${r.ratio == null ? "—" : pct1(r.ratio)}`);
+    host.appendChild(el);
+  }
+}
+
+/* ============ 走勢：小倍數 ============ */
+function panels(){
+  const lv = LEVEL;
+  const scored = G.counties.filter(c => c.d[lv]).map(c => {
+    const [birth, school] = c.d[lv];
+    const series = birth.map((b, i) => b ? school[i] / b * 100 : null);
+    const span = Math.max(...birth.map((b, i) => Math.abs(school[i] - b)));
+    return { n: c.n, series, span, birth, school };
+  }).sort((a, b) => b.span - a.span).slice(0, 12);
+
+  const W = 200, H = 74, PL = 4, PR = 4, PT = 8, PB = 13;
+  const host = $("#panels");
+  host.innerHTML = "";
+
+  for (const c of scored){
+    const vals = c.series.filter(v => v != null);
+    if (!vals.length) continue;
+    const top = Math.max(120, ...vals) * 1.05;
+    const x = i => PL + i * (W - PL - PR) / (YEARS.length - 1);
+    const y = v => PT + (1 - v / top) * (H - PT - PB);
+
+    const pan = document.createElement("div");
+    pan.className = "pan";
+    const first = c.series[0], last = c.series[LAST];
+    const dir = last > first ? "up" : "down";
+    pan.innerHTML = `<div class="t"><b>${c.n}</b><span class="${dir}">${
+      first == null ? "—" : pct1(first)} → ${last == null ? "—" : pct1(last)}</span></div>`;
+
+    const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img",
+      "aria-label": `${c.n} 就學戶籍比，${YEARS[0]} 學年 ${first == null ? "無資料" : pct1(first)}，${YEARS[LAST]} 學年 ${last == null ? "無資料" : pct1(last)}` });
+    svg.appendChild(svgEl("line", { class: "b100", x1: PL, x2: W - PR, y1: y(100), y2: y(100) }));
+    svg.appendChild(svgEl("line", { class: "bl", x1: PL, x2: W - PR, y1: H - PB, y2: H - PB }));
+
+    let d = "";
+    c.series.forEach((v, i) => { if (v != null) d += (d ? "L" : "M") + x(i) + " " + y(v); });
+    svg.appendChild(svgEl("path", { class: "ser", d, stroke: last >= 100 ? "var(--s3)" : "var(--s2)" }));
+
+    [0, LAST].forEach(i => {
+      if (c.series[i] == null) return;
+      svg.appendChild(svgEl("circle", { cx: x(i), cy: y(c.series[i]), r: 2.4,
+        fill: last >= 100 ? "var(--s3)" : "var(--s2)" }));
+    });
+    [0, LAST].forEach(i => {
+      const t = svgEl("text", { class: "yr", x: x(i), y: H - 3,
+        "text-anchor": i === 0 ? "start" : "end" });
+      t.textContent = YEARS[i]; svg.appendChild(t);
+    });
+
+    // 每一年一條透明命中線，滑過去看該年的三個數字
+    YEARS.forEach((yr, i) => {
+      const hit = svgEl("line", { class: "hitline", x1: x(i), x2: x(i), y1: PT, y2: H - PB });
+      hoverable(hit, `<b>${c.n}</b>　${yr} 學年・${lv}<br>
+        出生戶籍地 ${fmt(c.birth[i])} 人<br>學校所在地 ${fmt(c.school[i])} 人<br>
+        就學戶籍比 ${c.series[i] == null ? "—" : pct1(c.series[i])}`);
+      svg.appendChild(hit);
+    });
+
+    pan.appendChild(svg);
+    /* 比率一定要跟著它的分母出現。二專那種全國只有 800 人的等級別，
+       「1900% → 0%」其實是個位數人口算出來的，光看比率會嚴重誤讀。 */
+    const f = document.createElement("div");
+    f.className = "f";
+    f.innerHTML = `<span>${YEARS[LAST]} 學年　出生 ${fmt(c.birth[LAST])} 人</span>` +
+                  `<span>就學 ${fmt(c.school[LAST])} 人</span>`;
+    pan.appendChild(f);
+    host.appendChild(pan);
+  }
+}
+
+/* ============ 存量：堆疊條 ============ */
+const EDU_COLORS = ["#1b4f8f", "#2a78d6", "#5fa2e6", "#9cc6f0",
+                    "#c9b8a2", "#d99a6c", "#c96f4a", "#a04a33", "#7d3a28", "#b9bec1"];
+(function eduBars(){
+  $("#eduPeriod").textContent = G.edu.period;
+  $("#eduLegend").innerHTML = EDU_LAB.map((l, i) =>
+    `<span><i class="swatch bar" style="background:${EDU_COLORS[i]}"></i>${l}</span>`).join("");
+
+  const items = G.edu.items.map(r => {
+    const tot = r.v.reduce((a, b) => a + b, 0);
+    return { n: r.n, v: r.v, tot, ter: tertiaryPct(r.n) };
+  }).sort((a, b) => b.ter - a.ter);
+
+  const host = $("#edubars");
+  host.innerHTML = "";
+  const head = document.createElement("div");
+  head.className = "row hdr";
+  head.style.gridTemplateColumns = "84px 1fr 82px 74px";
+  head.innerHTML = `<div class="lab">縣市</div><div></div>
+    <div class="num">15 歲以上</div><div class="num">專科以上</div>`;
+  host.appendChild(head);
+
+  for (const r of items){
+    const el = document.createElement("div");
+    el.className = "row";
+    el.style.gridTemplateColumns = "84px 1fr 82px 74px";
+    let acc = 0;
+    const segs = r.v.map((v, i) => {
+      const w = r.tot ? v / r.tot * 100 : 0;
+      const s = `<div class="ebar" style="left:${acc}%; width:${w}%; background:${EDU_COLORS[i]}"></div>`;
+      acc += w; return s;
+    }).join("");
+    el.innerHTML = `
+      <div class="lab">${r.n}</div>
+      <div class="track">${segs}</div>
+      <div class="num">${fmt(r.tot)}</div>
+      <div class="num hi">${r.ter == null ? "—" : pct1(r.ter)}</div>`;
+    hoverable(el, `<b>${r.n}</b>　${G.edu.period}<br>15 歲以上原住民 ${fmt(r.tot)} 人<br>` +
+      EDU_LAB.map((l, i) => `${l} ${fmt(r.v[i])}（${r.tot ? (r.v[i] / r.tot * 100).toFixed(1) : "0.0"}%）`).join("<br>"));
+    host.appendChild(el);
+  }
+})();
+
+/* ============ 關聯：散布圖 ============ */
+(function scatter(){
+  const rows = rowsAt("總計", LAST)
+    .map(r => ({ n: r.n, x: r.ratio, y: tertiaryPct(r.n) }))
+    .filter(r => r.x != null && r.y != null);
+
+  const W = 720, H = 420, PL = 52, PR = 96, PT = 16, PB = 44;
+  const xmax = Math.max(...rows.map(r => r.x)) * 1.08;
+  const ys = rows.map(r => r.y);
+  const ymin = Math.floor(Math.min(...ys) / 5) * 5 - 2;
+  const ymax = Math.ceil(Math.max(...ys) / 5) * 5 + 2;
+  const X = v => PL + Math.min(v, xmax) / xmax * (W - PL - PR);
+  const Y = v => PT + (1 - (v - ymin) / (ymax - ymin)) * (H - PT - PB);
+
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img",
+    "aria-label": `散布圖：橫軸為 ${YEARS[LAST]} 學年就學戶籍比，縱軸為原住民成年人口專科以上比率，共 ${rows.length} 個縣市` });
+
+  for (let v = ymin; v <= ymax; v += 5){
+    svg.appendChild(svgEl("line", { class: "gl", x1: PL, x2: W - PR, y1: Y(v), y2: Y(v) }));
+    const t = svgEl("text", { class: "axl", x: PL - 8, y: Y(v) + 4, "text-anchor": "end" });
+    t.textContent = v + "%"; svg.appendChild(t);
+  }
+  for (const v of [0, 100, 200, 300, 400]){
+    if (v > xmax) continue;
+    svg.appendChild(svgEl("line", { class: v === 100 ? "refl" : "gl",
+      x1: X(v), x2: X(v), y1: PT, y2: H - PB }));
+    const t = svgEl("text", { class: "axl", x: X(v), y: H - PB + 16, "text-anchor": "middle" });
+    t.textContent = v + "%"; svg.appendChild(t);
+  }
+  const xl = svgEl("text", { class: "refx", x: X(100), y: H - PB + 32, "text-anchor": "middle" });
+  xl.textContent = "100% ＝ 出生人數與就學人數相等";
+  svg.appendChild(xl);
+  const yl = svgEl("text", { class: "axl", x: PL - 8, y: PT - 4, "text-anchor": "end" });
+  yl.textContent = "專科以上";
+  svg.appendChild(yl);
+
+  /* 點的面積正比於該縣市的原住民成年人口。等大小的話，連江縣（256 人、
+     全縣 4 個原民大專生）會和花蓮縣（79,475 人）一樣醒目，那是誤導——
+     小縣的比率本來就是少數個案算出來的。 */
+  const pop = n => { const r = eduByName.get(n); return r ? r.v.reduce((a, b) => a + b, 0) : 0; };
+  const pmax = Math.max(...rows.map(r => pop(r.n)));
+  const rad = n => 3.5 + Math.sqrt(pop(n) / pmax) * 11;
+
+  /* 只標人口前 6 大 ＋ 就學戶籍比最高的那個，其餘靠 hover。
+     不標「比率最低」那一端——那一格永遠是連江縣（全縣 4 個原民大專生），
+     標了只會把讀者的注意力導到雜訊上。 */
+  const byPop = [...rows].sort((a, b) => pop(b.n) - pop(a.n));
+  const topX = rows.reduce((a, b) => a.x > b.x ? a : b);
+  const named = new Set([...byPop.slice(0, 6), topX].map(r => r.n));
+
+  // 大點先畫，小點疊在上面才不會被蓋掉
+  for (const r of [...rows].sort((a, b) => pop(b.n) - pop(a.n))){
+    const inflow = r.x >= 100;
+    const c = svgEl("circle", { cx: X(r.x), cy: Y(r.y), r: rad(r.n),
+      fill: inflow ? "var(--s3)" : "var(--s2)", "fill-opacity": .72,
+      stroke: "var(--surface)", "stroke-width": 1.5 });
+    hoverable(c, `<b>${r.n}</b><br>就學戶籍比 ${pct1(r.x)}（${YEARS[LAST]} 學年）<br>
+      專科以上 ${pct1(r.y)}（${G.edu.period}）<br>
+      15 歲以上原住民 ${fmt(pop(r.n))} 人`);
+    svg.appendChild(c);
+  }
+  for (const r of rows){
+    if (!named.has(r.n)) continue;
+    const right = X(r.x) < W - PR - 60;
+    const t = svgEl("text", { class: "endlab", fill: "var(--ink-2)",
+      x: X(r.x) + (right ? rad(r.n) + 6 : -(rad(r.n) + 6)),
+      y: Y(r.y) + 4, "text-anchor": right ? "start" : "end" });
+    t.textContent = r.n; svg.appendChild(t);
+  }
+  $("#scatter").appendChild(svg);
+})();
+
+/* ============ ============ */
+function render(){
+  const rows = rowsAt(LEVEL, YI);
+  const total = rows.reduce((a, r) => a + r.birth, 0);
+  $("#levelcnt").textContent = `${YEARS[YI]} 學年　全國 ${total.toLocaleString()} 人`;
+  $("#flowTitle").textContent =
+    "原鄉送出學生，六都收下" + (LEVEL === "總計" ? "" : `（${LEVEL}）`);
+  kpis(rows);
+  dumbbell(rows);
+  panels();
+}
+render();
+
+})();
+</script>
+</body>
+</html>

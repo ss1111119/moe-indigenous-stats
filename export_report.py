@@ -140,6 +140,43 @@ def pack_ethnicity() -> dict:
     return {"years": years, "items": items, "ref": ref}
 
 
+def pack_geography() -> dict:
+    """縣市頁：流動（出生戶籍地 → 學校所在地）＋ 存量（成年人口學歷結構）。
+
+    ⚠️ 兩塊的基準日不同——流動是學年度，存量是民國 113 年 12 月底的人口統計。
+    因此存量不進 `d`（不受等級別／學年度切換影響），另放在 `edu` 底下，
+    前端必須各自標明基準日。這不是疏漏，是刻意不讓兩者被同一個控制項帶著跑。
+    """
+    g = pd.read_csv(OUT / "geography.csv")
+    years = sorted(int(y) for y in g["學年度"].unique())
+    idx = {y: i for i, y in enumerate(years)}
+
+    counties = {}
+    for name, gc in g.groupby("縣市"):
+        rec = counties.setdefault(name, {"n": name, "d": {}})
+        for lv, gl in gc.groupby("等級別"):
+            birth, school = [0] * len(years), [0] * len(years)
+            for r in gl.itertuples():
+                i = idx[int(r.學年度)]
+                birth[i] = int(r.出生戶籍地在學數)
+                school[i] = int(r.學校所在地在學數)
+            rec["d"][lv] = [birth, school]
+
+    edu = pd.read_csv(OUT / "adult_education.csv")
+    labels = ["博士", "碩士", "大學院校", "專科", "高中職",
+              "國中初職", "小學", "自修", "不識字", "未詳"]
+    wide = edu.pivot_table(index="縣市", columns="教育程度", values="人數",
+                           aggfunc="sum").fillna(0).astype(int)
+    items = [{"n": n, "v": [int(wide.loc[n, c]) for c in labels]}
+             for n in sorted(wide.index)]
+
+    return {
+        "years": years, "levels": LEVELS,
+        "counties": sorted(counties.values(), key=lambda r: r["n"]),
+        "edu": {"period": "民國 113 年 12 月底", "labels": labels, "items": items},
+    }
+
+
 def totals(field: pd.DataFrame) -> dict:
     f = field[(field["等級別"] == "總計") & field["可比"]]
     t = f.groupby("學年度")[["原民在學數", "一般生在學數"]].sum()
@@ -172,13 +209,22 @@ def main() -> None:
         "schools.json": pack_schools(),
         "gender.json": pack_gender(),
         "ethnicity.json": pack_ethnicity(),
+        "geography.json": pack_geography(),
     }
+
+    # 兩個頁面共用同一份 CSS。抽出來是為了讓配色與元件只有一個定義處——
+    # 兩頁各自內嵌一份的話，改了一邊忘了另一邊不會有任何錯誤訊息。
+    pages = {"index.html": "report_template.html",
+             "geography.html": "geography_template.html"}
 
     DOCS.mkdir(exist_ok=True)
     (DOCS / "data").mkdir(exist_ok=True)
     (DOCS / ".nojekyll").write_text("", encoding="utf-8")
-    (DOCS / "index.html").write_text(
-        (ROOT / "report_template.html").read_text(encoding="utf-8"), encoding="utf-8")
+    (DOCS / "style.css").write_text(
+        (ROOT / "site_style.css").read_text(encoding="utf-8"), encoding="utf-8")
+    for out_name, src in pages.items():
+        (DOCS / out_name).write_text(
+            (ROOT / src).read_text(encoding="utf-8"), encoding="utf-8")
 
     for name, obj in files.items():
         blob = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))

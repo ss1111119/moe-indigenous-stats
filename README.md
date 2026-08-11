@@ -5,7 +5,9 @@
 這個專案把那些出版品解析出來，接上開放資料的全體學生數，
 產出可以直接分析的 CSV，以及一份對照報告。
 
-📊 **報告頁：https://ss1111119.github.io/moe-indigenous-stats/**
+📊 **報告頁**（兩頁，右上角可切換）
+- [科系](https://ss1111119.github.io/moe-indigenous-stats/) — 原民生念什麼，跟一般生差多少
+- [縣市](https://ss1111119.github.io/moe-indigenous-stats/geography.html) — 原民生離開了哪些縣市，各縣市的學歷存量
 
 - **106–114 學年**科系分析，27 個學門、169 個細學類；校別與族籍別 **104–114 學年**
 - 原住民學生 vs 一般生的**結構差異**與**逐年增減趨勢**
@@ -25,6 +27,7 @@
 | [`data/schools.json`](https://ss1111119.github.io/moe-indigenous-stats/data/schools.json) | 242 校 × 等級別 × 104–114 學年，附全國占比對照 | 72 KB |
 | [`data/gender.json`](https://ss1111119.github.io/moe-indigenous-stats/data/gender.json) | 5 等級別 × 104–114 學年的原民／一般生男女人數 | 1 KB |
 | [`data/ethnicity.json`](https://ss1111119.github.io/moe-indigenous-stats/data/ethnicity.json) | 18 族 × 等級別 × 性別 × 104–114 學年 | 9 KB |
+| [`data/geography.json`](https://ss1111119.github.io/moe-indigenous-stats/data/geography.json) | 22 縣市 × 等級別 × 104–114 的出生戶籍地／學校所在地，附成年人口學歷結構 | 14 KB |
 
 送的是**原始人數**，占比、指數、相對倍數一律在前端算——所以換等級別時
 所有圖表用同一套公式重算，口徑不會分岔。`cmp: 0` 表示該類不可比（見下方 999 說明），
@@ -69,6 +72,11 @@ python -m http.server -d docs 8000   # 本機預覽
 
 報告頁要 fetch `data/*.json`，**不能直接用 `file://` 開**，得起一個 server。
 
+`docs/` 是 GitHub Pages 的發佈目錄，內容全部由 `export_report.py` 產生，不要手改：
+`report_template.html` → `docs/index.html`、`geography_template.html` → `docs/geography.html`、
+`site_style.css` → `docs/style.css`。**兩頁共用同一份 CSS**——各自內嵌一份的話，
+改了一邊忘了另一邊不會有任何錯誤訊息。
+
 `out/` 的 CSV 已經放進版控，**不跑 pipeline 也能直接用**。
 `data/`（原始檔 71MB）沒有進版控，`fetch.py` 可完整重建。
 
@@ -95,7 +103,12 @@ python -m http.server -d docs 8000   # 本機預覽
 ## 縣市維度：流出、承接、存量
 
 上面全部是全國層級的科系／校別／性別／族籍別。這一節是另一根軸——**縣市**，
-由三塊組成，回答同一個問題的三個階段。報告頁目前**沒有**這個維度，只有 CSV。
+由三塊組成，回答同一個問題的三個階段，成果是第二個報告頁
+[縣市](https://ss1111119.github.io/moe-indigenous-stats/geography.html)。
+
+**為什麼另開一頁而不是加在原本那頁**：原頁的核心互動是等級別切換器，一按全頁重算；
+而存量那塊根本沒有等級別這個維度，塞進去會變成一個對主控制項毫無反應的死區塊。
+加上原頁完全沒有地理維度，這不是「多加一塊」，是開一根新的座標軸。
 
 ### 一、流出與承接（`build_geography.py`）
 
