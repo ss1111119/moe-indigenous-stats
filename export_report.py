@@ -212,6 +212,22 @@ def pack_geography() -> dict:
               for row in byname[r.縣市].set_index("年齡組").loc[band_order].itertuples()],
     } for r in ast.itertuples()]
 
+    # 高中職分流。⚠️ 送占比與人數，但頁面只畫占比——總人數十一年間降了 15.7%，
+    # 用人數畫線會讓每一類一起往下掉，把「普通科比重上升」這個訊息淹掉。
+    st = pd.read_csv(OUT / "senior_stream.csv")
+    st_years = [str(y) for y in sorted(st["學年"].unique())]
+    st_names = ["普通科", "綜合高中", "專業群(職業)科", "實用技能學程", "進修部"]
+    stream = {
+        "years": st_years, "names": st_names,
+        "share": [[round(float(st[(st["學年"].astype(str) == y) &
+                                  (st["分流"] == n)]["占比"].iloc[0]), 2)
+                   for y in st_years] for n in st_names],
+        "n": [[int(st[(st["學年"].astype(str) == y) &
+                      (st["分流"] == n)]["人數"].iloc[0])
+               for y in st_years] for n in st_names],
+        "total": [int(st[st["學年"].astype(str) == y]["人數"].sum()) for y in st_years],
+    }
+
     # 就學階梯。⚠️ 只送鄉鎮市區數與人數，不送任何跨階相除的結果——
     # 四階是橫斷面不是同一批人，而且年級數不同，相除沒有意義。
     # 前端也不得自行相除，見 geography_template.html 的 ladder()。
@@ -236,6 +252,7 @@ def pack_geography() -> dict:
                                      - ast["年齡標準化占比"].min()), 1),
         },
         "ladder": {"year": str(lad["學年"].iloc[0]), "total": 368, "items": ladder},
+        "stream": stream,
         "town": {"year": town_year, "items": towns},
     }
 
