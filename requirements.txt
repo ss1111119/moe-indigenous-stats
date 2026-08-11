@@ -1,3 +1,4 @@
 pandas>=2.0
 openpyxl>=3.1      # 讀 109 學年起的 .xlsx 出版品
 xlrd>=2.0          # 讀 106–108 學年的舊版 .xls 出版品
+pytest>=8.0        # 跑 tests/ 的輸出不變量與頁面自我描述檢查
