@@ -98,6 +98,28 @@
     <div class="grid" id="panels"></div>
   </section>
 
+  <section id="ladder">
+    <div class="sec-head">
+      <div class="eyebrow">就學階梯 ・ 單一學年橫斷面</div>
+      <h2>不是不想留在家鄉，是家鄉沒有下一階的學校</h2>
+      <p class="note">
+        全國有 368 個鄉鎮市區。<b id="ladYear"></b> 學年，
+        有國小的是 <b id="ladFirst"></b> 個，到了大專只剩 <b id="ladLast"></b> 個。
+        上面幾區看到的「離開戶籍地」，結構上的理由就在這條線。
+        <br>
+        <span class="warn">＊</span>兩件事不要做：
+        <b>四階是同一時點的橫斷面，不是同一批人的追蹤</b>——今年的國小生與今年的
+        大專生是不同的人，相除不是升學率也不是流失率。
+        <b>各階年級數不同</b>（國小 6 年、國中 3 年、高中職 3 年，大專含二專五專
+        學士碩博而不固定），所以人數不可跨階相比。可比的是鄉鎮市區數，
+        因為每個鄉鎮在每一階都只算一次。
+      </p>
+    </div>
+    <div class="card">
+      <div class="rows" id="ladderbars"></div>
+    </div>
+  </section>
+
   <section id="town">
     <div class="sec-head">
       <div class="eyebrow">承接端 ・ 單一學年快照</div>
@@ -463,6 +485,42 @@ const EDU_COLORS = ["#1b4f8f", "#2a78d6", "#5fa2e6", "#9cc6f0",
       <div class="num hi">${r.ter == null ? "—" : pct1(r.ter)}</div>`;
     hoverable(el, `<b>${r.n}</b>　${G.edu.period}<br>15 歲以上原住民 ${fmt(r.tot)} 人<br>` +
       EDU_LAB.map((l, i) => `${l} ${fmt(r.v[i])}（${r.tot ? (r.v[i] / r.tot * 100).toFixed(1) : "0.0"}%）`).join("<br>"));
+    host.appendChild(el);
+  }
+})();
+
+/* ============ 就學階梯 ============ */
+(function ladder(){
+  const L = G.ladder.items, TOT = G.ladder.total;
+  $("#ladYear").textContent = G.ladder.year;
+  $("#ladFirst").textContent = L[0].towns;
+  $("#ladLast").textContent = L[L.length - 1].towns;
+
+  // 條長用「有該階學校的鄉鎮市區數 ÷ 全國 368」。刻意不用人數——
+  // 人數受各階年級數影響，畫成長度會讓讀者把它讀成流失曲線。
+  const host = $("#ladderbars");
+  const cols = "72px 1fr 92px 104px";
+
+  const head = document.createElement("div");
+  head.className = "row hdr";
+  head.style.gridTemplateColumns = cols;
+  head.innerHTML = `<div class="lab">學制</div><div></div>
+    <div class="num">鄉鎮市區</div><div class="num">原民生</div>`;
+  host.appendChild(head);
+
+  for (const r of L){
+    const el = document.createElement("div");
+    el.className = "row";
+    el.style.gridTemplateColumns = cols;
+    el.innerHTML = `
+      <div class="lab">${r.lv}</div>
+      <div class="track"><div class="ebar" style="left:0; width:${r.towns / TOT * 100}%"></div></div>
+      <div class="num hi">${r.towns}</div>
+      <div class="num">${fmt(r.ind)}</div>`;
+    hoverable(el, `<b>${r.lv}</b>　${G.ladder.year} 學年<br>` +
+      `有該階學校的鄉鎮市區 ${r.towns} 個（全國 ${TOT} 個）<br>` +
+      `其中有原民生的 ${r.townsInd} 個<br>` +
+      `原民生 ${fmt(r.ind)} 人（${r.yrs == null ? "年級數不一，不可與他階相比" : r.yrs + " 個年級"}）`);
     host.appendChild(el);
   }
 })();

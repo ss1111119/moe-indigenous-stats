@@ -191,10 +191,23 @@ def pack_geography() -> dict:
     } for r in town.itertuples()]
     towns.sort(key=lambda t: -t["ind"])
 
+    # 就學階梯。⚠️ 只送鄉鎮市區數與人數，不送任何跨階相除的結果——
+    # 四階是橫斷面不是同一批人，而且年級數不同，相除沒有意義。
+    # 前端也不得自行相除，見 geography_template.html 的 ladder()。
+    lad = pd.read_csv(OUT / "ladder_summary.csv")
+    ladder = [{
+        "lv": r.學制,
+        "yrs": None if pd.isna(r.年級數) else int(r.年級數),
+        "towns": int(r.有該階學校的鄉鎮市區數),
+        "townsInd": int(r.有原民生的鄉鎮市區數),
+        "ind": int(r.原住民學生數),
+    } for r in lad.itertuples()]
+
     return {
         "years": years, "levels": LEVELS,
         "counties": sorted(counties.values(), key=lambda r: r["n"]),
         "edu": {"period": "民國 113 年 12 月底", "labels": labels, "items": items},
+        "ladder": {"year": str(lad["學年"].iloc[0]), "total": 368, "items": ladder},
         "town": {"year": town_year, "items": towns},
     }
 

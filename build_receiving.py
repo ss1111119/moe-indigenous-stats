@@ -29,8 +29,9 @@ import json
 import sys
 from pathlib import Path
 
+from fetch_segis_college import cache_path
+
 ROOT = Path(__file__).parent
-CACHE = ROOT / "data" / "segis-college" / "admin_college_town.json"
 OUT = ROOT / "out"
 GEOGRAPHY = OUT / "geography.csv"
 
@@ -50,30 +51,37 @@ if hasattr(sys.stdout, "reconfigure"):  # Windows 主控台預設 cp950，中文
     sys.stderr.reconfigure(encoding="utf-8")
 
 
-def load() -> tuple[str, list[dict]]:
-    """讀快取並驗證，回傳 (學年, 資料列)。任何一項不對就中止，不產出半套輸出。"""
-    if not CACHE.exists():
+def load_level(code: str, label: str) -> tuple[str, list[dict]]:
+    """讀一個學制的快取並驗證，回傳 (期別, 資料列)。
+
+    四個學制共用這支——`build_ladder.py` 也呼叫它。所有錯誤訊息都指名學制，
+    否則四個學制一起跑時看不出是哪一個壞掉。
+    任何一項不對就中止，不產出半套輸出。
+    """
+    path = cache_path(code)
+    if not path.exists():
         raise SystemExit(
-            f"找不到 {CACHE.relative_to(ROOT)}。請先執行：python fetch_segis_college.py\n"
+            f"{label}：找不到 {path.relative_to(ROOT)}。"
+            "請先執行：python fetch_segis_college.py\n"
             "本腳本不會自己上網取數——建置階段線上取數會讓輸出無法重現。"
         )
 
-    doc = json.loads(CACHE.read_text(encoding="utf-8-sig"))
+    doc = json.loads(path.read_text(encoding="utf-8-sig"))
     names = [c["COLUMN_NAME"] for c in doc["ColumnList"]]
     missing = [n for n in REQUIRED if n not in names]
     if missing:
         raise SystemExit(
-            f"回應缺少必要欄位 {missing}。\n實際收到的欄位：{names}\n"
+            f"{label}：回應缺少必要欄位 {missing}。\n實際收到的欄位：{names}\n"
             "平台可能改版了欄位命名，未產出任何輸出檔。"
         )
 
     rows = doc["RowDataList"]
     if not rows:
-        raise SystemExit("RowDataList 是空的，未產出任何輸出檔。")
+        raise SystemExit(f"{label}：RowDataList 是空的，未產出任何輸出檔。")
 
     times = {r["INFO_TIME"] for r in rows}
     if len(times) != 1:
-        raise SystemExit(f"資料含多個期別 {sorted(times)}，本腳本只處理單一期別。")
+        raise SystemExit(f"{label}：資料含多個期別 {sorted(times)}，只處理單一期別。")
     info_time = times.pop()
 
     # 逐列檢查性別分項。加總對不上表示欄位讀錯或來源有誤，
@@ -82,11 +90,16 @@ def load() -> tuple[str, list[dict]]:
         m, f, t = r["NA_STU_M_CNT"], r["NA_STU_F_CNT"], r["NA_STU_CNT"]
         if (m or 0) + (f or 0) != (t or 0):
             raise SystemExit(
-                f"{info_time} {r['COUNTY']}{r['TOWN']}："
+                f"{label} {info_time} {r['COUNTY']}{r['TOWN']}："
                 f"原住民男 {m} ＋ 女 {f} ≠ 總計 {t}，未產出任何輸出檔。"
             )
 
     return info_time, rows
+
+
+def load() -> tuple[str, list[dict]]:
+    """大專。本檔的既有行為不變。"""
+    return load_level("tertiary", "大專")
 
 
 def academic_year(info_time: str) -> str:
