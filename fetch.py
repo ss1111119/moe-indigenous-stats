@@ -15,9 +15,14 @@ from pathlib import Path
 BASE = "https://stats.moe.gov.tw/files/opendata"
 DATA_DIR = Path(__file__).parent / "data"
 
-# stats.moe.gov.tw 的憑證缺 Subject Key Identifier，新版 OpenSSL 會拒絕，
-# 只好關掉驗證。這裡抓的是公開統計檔，沒有機敏內容，風險僅止於內容遭竄改。
-SSL_CTX = ssl._create_unverified_context()
+# stats.moe.gov.tw 的憑證缺 Subject Key Identifier。Python 3.13 起
+# VERIFY_X509_STRICT 預設開啟，會因此拒絕連線（RFC 5280 要求 CA 憑證帶 SKI）。
+#
+# 只關掉 VERIFY_X509_STRICT 這一個 flag 就夠了：憑證鏈驗證與主機名稱檢查都仍然生效，
+# 放寬的只有「憑證欄位是否完全符合 RFC」這層形式檢查。
+# 不要退回 _create_unverified_context()——那等同 curl -k，連中間人都擋不住。
+SSL_CTX = ssl.create_default_context()
+SSL_CTX.verify_flags &= ~ssl.VERIFY_X509_STRICT
 
 if hasattr(sys.stdout, "reconfigure"):  # Windows 主控台預設 cp950，中文會亂碼
     sys.stdout.reconfigure(encoding="utf-8")
