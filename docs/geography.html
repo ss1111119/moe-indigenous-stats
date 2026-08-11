@@ -56,11 +56,18 @@
   <section id="flow">
     <div class="sec-head">
       <div class="eyebrow">流動</div>
-      <h2 id="flowTitle">原鄉送出學生，六都收下</h2>
+      <h2 id="flowTitle">人數上是六都收下，比例上不是</h2>
       <p class="note">
         橫軸是人數（0 到全國最大值），每一列的兩個點是同一個縣市的兩個數字：
         藍點為在該縣市出生設籍的原民生，灰點為在該縣市念書的原民生。
         <b>兩點距離愈遠，代表該縣市的「生源」與「就學」落差愈大。</b>
+      </p>
+      <p class="note">
+        但人數會被縣市大小帶著跑。最右欄的<b>集中倍數</b>＝該縣市占全國原民生的比例
+        ÷ 占全國一般生的比例：<b>1.00</b> 表示它收的原民生比例，與它收一般生的比例相同。
+        臺北市收的原民生人數最多，集中倍數卻只有 0.76——<b>它承接的原民生，
+        比它的規模「應該」承接的還少</b>。真正超額承擔的是臺東（6.93）、花蓮（4.96）、
+        屏東（3.15）這些原鄉縣市自己。
       </p>
     </div>
     <div class="card">
@@ -71,7 +78,7 @@
       <div class="legend">
         <span><i class="swatch" style="background:var(--ind)"></i>出生戶籍地</span>
         <span><i class="swatch" style="background:var(--gen)"></i>學校所在地</span>
-        <span class="dashnote">依淨流動排序，負值在上</span>
+        <span class="dashnote">依淨流動排序，負值在上；集中倍數 &gt;1 表示相對超額承接</span>
       </div>
       <div class="rows" id="dumbbell"></div>
     </div>
@@ -130,10 +137,16 @@
     </div>
     <div class="caveats">
       <div class="cv">
-        <span class="tag">無對照</span>
-        <h3>這一頁沒有「一般生」可比</h3>
-        <p>全體學生的開放資料沒有出生地，所以本站其他頁面都有的原民／一般生對照，
-           在這一頁做不出來。這裡的數字只能自己跟自己比、縣市之間互相比。</p>
+        <span class="tag">對照</span>
+        <h3>一般生對照：流出端沒有，承接端有</h3>
+        <p><b>出生戶籍地端沒有</b>——全體學生的開放資料裡沒有出生地，那一半做不出來，
+           只能縣市之間互相比。<b>學校所在地端有</b>，即集中倍數那一欄。
+           一般生＝全體學生 − 原住民學生，兩邊都只含大專校院（不含空大、進修學校與
+           宗教研修學院），所以<b>集中倍數的原民端用的是 A1-6a，不是表上「學校所在地」那一欄（A1-6b）</b>，
+           兩者對不起來是正常的。總計層級差距不大（25,613 vs 27,347），
+           但<b>二專差距很大</b>（288 vs 800）——空大及進修學校的二專生占了大半。
+           滑過任一列可看到集中倍數實際用的人數。
+           沒有大專校院的縣市（如連江縣）無對照，顯示為「—」。</p>
       </div>
       <div class="cv">
         <span class="tag">基準日</span>
@@ -231,9 +244,10 @@ const tertiaryPct = n => {
 /* 取某等級別、某年的各縣市流動 */
 function rowsAt(lv, yi){
   return G.counties.filter(c => c.d[lv]).map(c => {
-    const birth = c.d[lv][0][yi], school = c.d[lv][1][yi];
-    return { n: c.n, birth, school, net: school - birth,
-             ratio: birth ? school / birth * 100 : null };
+    const [B, S, N, C] = c.d[lv];
+    return { n: c.n, birth: B[yi], school: S[yi], narrow: N[yi], conc: C[yi],
+             net: S[yi] - B[yi],
+             ratio: B[yi] ? S[yi] / B[yi] * 100 : null };
   });
 }
 
@@ -286,17 +300,19 @@ function dumbbell(rows){
   host.innerHTML = "";
   host.style.setProperty("--cols", "");
 
+  const COLS = "84px 1fr 70px 70px 74px 76px";
   const head = document.createElement("div");
   head.className = "row hdr";
-  head.style.gridTemplateColumns = "84px 1fr 74px 74px 78px";
+  head.style.gridTemplateColumns = COLS;
   head.innerHTML = `<div class="lab">縣市</div><div></div>
-    <div class="num">出生戶籍地</div><div class="num">學校所在地</div><div class="num">淨流動</div>`;
+    <div class="num">出生戶籍地</div><div class="num">學校所在地</div>
+    <div class="num">淨流動</div><div class="num">集中倍數</div>`;
   host.appendChild(head);
 
   for (const r of sorted){
     const el = document.createElement("div");
     el.className = "row";
-    el.style.gridTemplateColumns = "84px 1fr 74px 74px 78px";
+    el.style.gridTemplateColumns = COLS;
     const a = r.birth / max * 100, b = r.school / max * 100;
     const lo = Math.min(a, b), hi = Math.max(a, b);
     el.innerHTML = `
@@ -309,11 +325,14 @@ function dumbbell(rows){
       </div>
       <div class="num">${fmt(r.birth)}</div>
       <div class="num">${fmt(r.school)}</div>
-      <div class="num hi"><span class="pill ${r.net > 0 ? "p" : r.net < 0 ? "n" : "z"}">${
-        r.net > 0 ? "+" : ""}${fmt(r.net)}</span></div>`;
+      <div class="num"><span class="pill ${r.net > 0 ? "p" : r.net < 0 ? "n" : "z"}">${
+        r.net > 0 ? "+" : ""}${fmt(r.net)}</span></div>
+      <div class="num hi">${r.conc == null ? "—" : r.conc.toFixed(2) + "×"}</div>`;
     hoverable(el, `<b>${r.n}</b>　${YEARS[YI]} 學年・${LEVEL}<br>
       出生戶籍地 ${fmt(r.birth)} 人<br>學校所在地 ${fmt(r.school)} 人<br>
-      就學戶籍比 ${r.ratio == null ? "—" : pct1(r.ratio)}`);
+      就學戶籍比 ${r.ratio == null ? "—" : pct1(r.ratio)}<br>
+      ${r.conc == null ? "該縣市無大專校院，無一般生對照"
+        : `集中倍數 ${r.conc.toFixed(2)}×（原民 ${fmt(r.narrow)} 人，不含空大宗教）`}`);
     host.appendChild(el);
   }
 }
@@ -508,7 +527,7 @@ function render(){
   const total = rows.reduce((a, r) => a + r.birth, 0);
   $("#levelcnt").textContent = `${YEARS[YI]} 學年　全國 ${total.toLocaleString()} 人`;
   $("#flowTitle").textContent =
-    "原鄉送出學生，六都收下" + (LEVEL === "總計" ? "" : `（${LEVEL}）`);
+    "人數上是六都收下，比例上不是" + (LEVEL === "總計" ? "" : `（${LEVEL}）`);
   kpis(rows);
   dumbbell(rows);
   panels();

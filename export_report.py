@@ -151,16 +151,23 @@ def pack_geography() -> dict:
     years = sorted(int(y) for y in g["學年度"].unique())
     idx = {y: i for i, y in enumerate(years)}
 
+    # 每個等級別送四條序列：出生戶籍地、學校所在地、學校所在地(A1-6a)、集中倍數。
+    # 前兩條是同一母體、可相減；第三條才是能配一般生的那個範圍。集中倍數在建置期
+    # 算好而不是丟給前端，因為它的分母是「全國扣掉沒有大專校院的縣市」，
+    # 前端從各縣市數字自己加總會得到不同的分母。
     counties = {}
     for name, gc in g.groupby("縣市"):
         rec = counties.setdefault(name, {"n": name, "d": {}})
         for lv, gl in gc.groupby("等級別"):
             birth, school = [0] * len(years), [0] * len(years)
+            narrow, conc = [0] * len(years), [None] * len(years)
             for r in gl.itertuples():
                 i = idx[int(r.學年度)]
                 birth[i] = int(r.出生戶籍地在學數)
                 school[i] = int(r.學校所在地在學數)
-            rec["d"][lv] = [birth, school]
+                narrow[i] = int(r.學校所在地在學數_不含空大宗教)
+                conc[i] = None if pd.isna(r.集中倍數) else round(float(r.集中倍數), 3)
+            rec["d"][lv] = [birth, school, narrow, conc]
 
     edu = pd.read_csv(OUT / "adult_education.csv")
     labels = ["博士", "碩士", "大學院校", "專科", "高中職",
