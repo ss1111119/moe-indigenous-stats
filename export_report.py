@@ -191,6 +191,27 @@ def pack_geography() -> dict:
     } for r in town.itertuples()]
     towns.sort(key=lambda t: -t["ind"])
 
+    # 年齡分解與標準化。⚠️ 原始占比一併送出且不被取代——兩者回答不同問題，
+    # 而且既有區塊用的就是原始占比，只送標準化會讓同一頁兩個數字對不上。
+    aa = pd.read_csv(OUT / "attainment_by_age.csv")
+    ast = pd.read_csv(OUT / "attainment_standardised.csv")
+    band_order = ["15-24歲", "25-34歲", "35-44歲", "45-54歲", "55-64歲", "65歲以上"]
+    spread = []
+    for b in band_order:
+        sub = aa[(aa["年齡組"] == b) & (aa["人數過少"] != "是")]["專科以上占比"]
+        spread.append(round(float(sub.max() - sub.min()), 1))
+    byname = {n: g for n, g in aa.groupby("縣市")}
+    ages = [{
+        "n": r.縣市,
+        "crude": float(r.原始專科以上占比),
+        "std": float(r.年齡標準化占比),
+        "p65": float(r._8),
+        "rk": int(r.原始排名), "rkStd": int(r.標準化排名),
+        "weak": r.標準化不穩定 == "是",
+        "v": [None if row.人數過少 == "是" else float(row.專科以上占比)
+              for row in byname[r.縣市].set_index("年齡組").loc[band_order].itertuples()],
+    } for r in ast.itertuples()]
+
     # 就學階梯。⚠️ 只送鄉鎮市區數與人數，不送任何跨階相除的結果——
     # 四階是橫斷面不是同一批人，而且年級數不同，相除沒有意義。
     # 前端也不得自行相除，見 geography_template.html 的 ladder()。
@@ -207,6 +228,13 @@ def pack_geography() -> dict:
         "years": years, "levels": LEVELS,
         "counties": sorted(counties.values(), key=lambda r: r["n"]),
         "edu": {"period": "民國 113 年 12 月底", "labels": labels, "items": items},
+        "age": {
+            "bands": band_order, "spread": spread, "items": ages,
+            "crudeSpread": round(float(ast["原始專科以上占比"].max()
+                                       - ast["原始專科以上占比"].min()), 1),
+            "stdSpread": round(float(ast["年齡標準化占比"].max()
+                                     - ast["年齡標準化占比"].min()), 1),
+        },
         "ladder": {"year": str(lad["學年"].iloc[0]), "total": 368, "items": ladder},
         "town": {"year": town_year, "items": towns},
     }

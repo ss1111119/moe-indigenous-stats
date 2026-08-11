@@ -155,6 +155,38 @@
     </div>
   </section>
 
+  <section id="agedec">
+    <div class="sec-head">
+      <div class="eyebrow">存量的年齡分解 ・ 同一份資料</div>
+      <h2>上面那張排行榜，有一部分是人口老化程度的排行榜</h2>
+      <p class="note">
+        上一區的占比把兩件事混在一起：各年齡層的教育程度差異，以及各縣市原住民人口的
+        <b>年齡結構</b>差異。臺東有 <b>18.9%</b> 的原住民是 65 歲以上，臺北只有
+        <b>10.4%</b>——而那一代不論住在哪裡，專科以上比率都很低。
+        <br>
+        以全國年齡結構為標準人口做標準化後，臺東從 29.3% 變成 <b>33.0%</b>，
+        名次由第 22 名升到第 <b>16</b> 名；花蓮由 17 升到 12、屏東由 15 升到 11。
+        <br>
+        <b>但這不推翻上一區的結論。</b>縣市全距從 <b id="ageCrude"></b> 個百分點
+        變成 <b id="ageStd"></b> 個，年齡結構只解釋約 13%；下一區的相關性對標準化
+        也穩健（+0.798 對 +0.806）。兩個數字回答不同問題：<b>原始占比</b>是
+        「現在住在這裡的原住民實際的學歷結構」，規劃在地服務要看它；
+        <b>標準化占比</b>是「排除人口老化程度後，各縣市差多少」。
+        <br>
+        <span class="warn">＊</span>這是<b>分解不是校正</b>——年齡結構本身就是遷移的
+        結果，不是外生變數，因此不支持任何因果推論。灰格代表該縣市該年齡組人數
+        不足 500 人，比率不穩定，也不計入上方的各組全距；標準化占比後方標
+        <span class="warn">＊</span>者，代表該縣市半數以上人口落在這種格子裡，
+        那個單一數字一樣不可當真（連江、金門、澎湖、嘉義市、雲林共 5 個）。
+        上述兩個全距的極值都落在未被標記的縣市，已驗證不受影響。
+      </p>
+    </div>
+    <div class="card">
+      <div class="legend" id="ageSpread"></div>
+      <div class="rows" id="agerows"></div>
+    </div>
+  </section>
+
   <section id="link">
     <div class="sec-head">
       <div class="eyebrow">關聯</div>
@@ -560,6 +592,54 @@ const EDU_COLORS = ["#1b4f8f", "#2a78d6", "#5fa2e6", "#9cc6f0",
       `大專校院 ${fmt(t.sch)} 所<br>原民生 ${fmt(t.ind)} 人<br>` +
       `全體學生 ${fmt(t.all)} 人<br>占當地 ${t.sh == null ? "—" : pct1(t.sh * 100)}` +
       (t.small ? `<br><b>分母不足 1,000 人，比例不穩定</b>` : ""));
+    host.appendChild(el);
+  }
+})();
+
+/* ============ 存量的年齡分解 ============ */
+(function ageDec(){
+  const A = G.age;
+  $("#ageCrude").textContent = A.crudeSpread;
+  $("#ageStd").textContent = A.stdSpread;
+
+  $("#ageSpread").innerHTML = A.bands.map((b, i) =>
+    `<span><b>${b}</b>　縣市全距 ${A.spread[i]} pp</span>`).join("");
+
+  // 依標準化占比排序——這一區的重點就是「換個算法名次會變」。
+  const items = A.items.slice().sort((a, b) => b.std - a.std);
+  const host = $("#agerows");
+  const cols = "72px repeat(6, 1fr) 62px 62px";
+
+  const head = document.createElement("div");
+  head.className = "row hdr";
+  head.style.gridTemplateColumns = cols;
+  head.innerHTML = `<div class="lab">縣市</div>` +
+    A.bands.map(b => `<div class="num">${b.replace("歲", "")}</div>`).join("") +
+    `<div class="num">原始</div><div class="num">標準化</div>`;
+  host.appendChild(head);
+
+  for (const r of items){
+    const el = document.createElement("div");
+    el.className = "row";
+    el.style.gridTemplateColumns = cols;
+    const cells = r.v.map(v => v == null
+      ? `<div class="num" style="opacity:.35">—</div>`
+      : `<div class="num">${v.toFixed(0)}</div>`).join("");
+    const move = r.rk - r.rkStd;
+    // 大半人口落在不穩定格裡的縣市，標準化占比一樣不穩定——標記優先於名次箭頭，
+    // 因為那種縣市的名次變動本身就不該被當真。
+    const mark = r.weak
+      ? `<span class="warn">＊</span>`
+      : (move > 0 ? `<span class="warn">↑${move}</span>` : "");
+    el.innerHTML = `<div class="lab">${r.n}</div>${cells}` +
+      `<div class="num">${pct1(r.crude)}</div>` +
+      `<div class="num hi">${pct1(r.std)}${mark}</div>`;
+    hoverable(el, `<b>${r.n}</b>　113 年 12 月底<br>` +
+      `原始 ${pct1(r.crude)}（第 ${r.rk} 名）<br>` +
+      `年齡標準化 ${pct1(r.std)}（第 ${r.rkStd} 名）` +
+      (r.weak ? `<br><b>該縣市半數以上人口落在人數過少的年齡組，此標準化值不穩定</b>` : "") +
+      `<br>65 歲以上占 ${pct1(r.p65)}<br>` +
+      A.bands.map((b, i) => `${b} ${r.v[i] == null ? "人數過少" : pct1(r.v[i])}`).join("<br>"));
     host.appendChild(el);
   }
 })();
