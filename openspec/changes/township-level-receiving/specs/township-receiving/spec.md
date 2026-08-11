@@ -3,8 +3,8 @@
 ### Requirement: Produce township-level receiving detail
 
 The system SHALL produce a detail dataset in which each row represents one
-year and one township (鄉鎮市區), carrying: year, county code, county name,
-township code, township name, institution count, total student count,
+academic year and one township (鄉鎮市區), carrying: academic year, county code,
+county name, township code, township name, institution count, total student count,
 indigenous student count, male indigenous student count, female indigenous
 student count, and indigenous share of total students.
 
@@ -20,9 +20,15 @@ them from statistical-area release codes.
 
 #### Scenario: Only townships hosting institutions appear
 
-- **WHEN** the detail dataset is inspected for any single year
-- **THEN** the number of distinct townships present is smaller than the national
-  township count, because townships with no tertiary institution contribute no rows
+- **WHEN** the detail dataset is inspected
+- **THEN** the number of distinct townships present is far smaller than the national
+  count of 368, because townships with no tertiary institution contribute no rows
+
+##### Example: observed coverage
+
+- **GIVEN** the source response for academic year 114
+- **WHEN** the detail dataset is built
+- **THEN** it contains 87 distinct townships across 21 distinct counties
 
 ### Requirement: Compute indigenous share from the same row
 
@@ -51,16 +57,16 @@ rather than zero.
 
 ### Requirement: Produce a county-level summary for the latest period
 
-The system SHALL produce a summary dataset for the latest available period, one row
-per county, carrying: county code, county name, number of townships hosting
-institutions, institution count, total student count, indigenous student count, and
-indigenous share of total students.
+The system SHALL produce a summary dataset for the latest academic year present in
+the detail dataset, one row per county, carrying: county code, county name, number of
+townships hosting institutions, institution count, total student count, indigenous
+student count, and indigenous share of total students.
 
-#### Scenario: Summary aggregates the latest period only
+#### Scenario: Summary aggregates the latest period
 
-- **WHEN** the build script runs over a detail dataset spanning multiple years
-- **THEN** the summary contains rows for the latest period only, and its indigenous
-  student totals equal the sum of that period's township rows per county
+- **WHEN** the build script runs over the detail dataset
+- **THEN** the summary contains one row per county for the latest academic year, and
+  its indigenous student totals equal the sum of that year's township rows per county
 
 ### Requirement: Present township receiving alongside county-level flow
 
@@ -99,16 +105,26 @@ do not dominate the display.
   county-level figure on the same page
 - **THEN** the page states that the two figures cover different scopes
 
-### Requirement: Retain multi-year data without presenting it
+### Requirement: Carry the academic year from the source
 
-The system SHALL retain every year covered by the fetch in the detail dataset, even
-though the report page presents only the latest period. A later change SHALL be able
-to build a time series from the detail dataset without re-fetching.
+The detail dataset SHALL carry an academic-year column whose value is taken from the
+source response rather than hard-coded, so that a later change adding earlier years
+does not alter the data shape, and so that a shift in the source's latest period is
+reflected rather than mislabelled.
 
-#### Scenario: Detail dataset spans all fetched years
+The report page SHALL state the academic year it is showing, and SHALL take that
+label from the data rather than from a fixed string.
 
-- **WHEN** the detail dataset is grouped by year
-- **THEN** every year present in the cached source appears, not only the latest one
+#### Scenario: Source period changes
+
+- **WHEN** the source begins returning a later academic year than before
+- **THEN** the detail dataset and the report page both report the new academic year,
+  and no output states the previous year
+
+#### Scenario: Detail dataset covers a single academic year
+
+- **WHEN** the detail dataset is grouped by academic year
+- **THEN** exactly one academic year is present, matching the source response
 
 ### Requirement: Fail rather than emit partial output
 

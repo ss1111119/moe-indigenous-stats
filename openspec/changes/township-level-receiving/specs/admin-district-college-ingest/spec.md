@@ -4,8 +4,11 @@
 
 The system SHALL retrieve the SEGIS dataset "行政區大專校院統計" at township
 (鄉鎮市區) granularity through the administrative-district open-service endpoint
-`GetAdminSTDataForOpenCode`, and SHALL cache each raw response on local disk
+`GetAdminSTDataForOpenCode`, and SHALL cache the raw response on local disk
 before any parsing occurs.
+
+A single request SHALL cover the whole country. The system SHALL NOT issue one
+request per county.
 
 The oCode parameter SHALL be a constant declared in the fetch script, accompanied
 by a comment recording the date it was obtained. The system SHALL NOT attempt to
@@ -32,27 +35,30 @@ discover the oCode at runtime.
 
 ### Requirement: Verify the field mapping before use
 
-The system SHALL declare the mapping from response field identifiers to their
-statistical meanings as an explicit constant, and SHALL validate the response
-against that mapping before producing any output. The system SHALL NOT rely on
-the field order shown in platform metadata pages.
+The system SHALL declare the required response field names as an explicit constant
+and SHALL read every value by field name. The system SHALL NOT read values by their
+position within the response.
 
-The mapping SHALL cover at minimum: number of institutions, total student count,
-indigenous student count, male indigenous student count, and female indigenous
-student count.
+The required names SHALL be: `INFO_TIME`, `COUNTY_ID`, `COUNTY`, `TOWN_ID`, `TOWN`,
+`SCH_CNT`, `STU_CNT`, `NA_STU_CNT`, `NA_STU_M_CNT`, `NA_STU_F_CNT`.
 
-#### Scenario: Response field count does not match the declared mapping
+#### Scenario: A required field is absent from the response
 
-- **WHEN** the parsed response contains a different set of field identifiers than
-  the declared mapping
-- **THEN** the system aborts, prints the field identifiers actually received, and
-  writes no output file
+- **WHEN** the response column list does not contain every required field name
+- **THEN** the system aborts, prints which required names are missing and which names
+  were actually received, and writes no output file
+
+#### Scenario: The response gains additional fields
+
+- **WHEN** the response contains fields beyond the required names
+- **THEN** the system proceeds normally, because values are read by name and extra
+  fields cannot shift the position of required ones
 
 #### Scenario: Sex components do not sum to the indigenous total
 
 - **WHEN** any record has male indigenous students plus female indigenous students
   not equal to indigenous students
-- **THEN** the system aborts and reports the year and township of the first
+- **THEN** the system aborts and reports the academic year and township of the first
   offending record
 
 ##### Example: sex-component validation
