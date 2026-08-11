@@ -60,10 +60,14 @@ DATASETS = {
     ),
 }
 
-# 原住民的學門／科系資料只出現在統計出版品裡，沒有 opendata 版本。
-# 106～108 是舊版 .xls，109 起改 .xlsx；sheet A1-3（學門）、A1-4（科系）名稱穩定。
+# 原住民的學門／科系與地理分布只出現在統計出版品裡，沒有 opendata 版本。
+# 104～108 是舊版 .xls，109 起改 .xlsx。sheet 名稱穩定：
+# A1-3（學門）、A1-4（科系）、A1-5（出生戶籍地）、A1-6a/A1-6b（學校所在地）。
+#
+# 起點是 104 不是 106：學門／科系分析因學科標準分類換版只能從 106 起算，
+# 但 build_geography.py 用的 A1-5／A1-6 沒有這個限制，104、105 都可用。
 EBOOK_BASE = "https://stats.moe.gov.tw/files/ebook/indigenous"
-EBOOK_YEARS = range(106, 115)
+EBOOK_YEARS = range(104, 115)
 
 # 對應的政府資料開放平臺 dataset id，可查後設資料
 DATA_GOV_IDS = {
