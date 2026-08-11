@@ -118,6 +118,8 @@ h2{margin:0; font-size:clamp(21px,3vw,27px); font-weight:640; letter-spacing:-.0
 .row:hover .dot{box-shadow:0 0 0 2px var(--surface-2)}
 .ebar{position:absolute; top:50%; height:11px; transform:translateY(-50%); left:0;
   background:var(--ind); border-radius:0 3px 3px 0}
+/* 分母過小的標記。不用紅色——這不是錯誤，是「別過度解讀」。 */
+.warn{color:var(--ink-2); font-weight:600; margin-left:1px}
 .eref{position:absolute; top:1px; bottom:1px; width:1px; background:var(--ink-2); opacity:.5}
 .eref.g{background:var(--neg); opacity:.65}
 .dv{position:relative; height:20px}

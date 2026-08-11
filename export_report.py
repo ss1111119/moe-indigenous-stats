@@ -177,10 +177,25 @@ def pack_geography() -> dict:
     items = [{"n": n, "v": [int(wide.loc[n, c]) for c in labels]}
              for n in sorted(wide.index)]
 
+    # 鄉鎮層級承接端。⚠️ 這塊也不進 `d`：它只有一個學年，跟著學年控制項跑會
+    # 讓讀者以為切了年份數字有變。學年字樣一律從 CSV 帶出，不寫死——來源端點
+    # 回傳的是「平台當下最新一期」，明年會變 115 學年（見 build_receiving.py）。
+    town = pd.read_csv(OUT / "receiving_township.csv")
+    town_year = str(town["學年"].iloc[0])
+    towns = [{
+        "c": r.縣市, "n": r.鄉鎮市區,
+        "ind": int(r.原住民學生數), "all": int(r.全體學生數),
+        "sch": int(r.學校數),
+        "sh": None if pd.isna(r.原民生占比) else round(float(r.原民生占比), 5),
+        "small": r.分母過小 == "是",
+    } for r in town.itertuples()]
+    towns.sort(key=lambda t: -t["ind"])
+
     return {
         "years": years, "levels": LEVELS,
         "counties": sorted(counties.values(), key=lambda r: r["n"]),
         "edu": {"period": "民國 113 年 12 月底", "labels": labels, "items": items},
+        "town": {"year": town_year, "items": towns},
     }
 
 

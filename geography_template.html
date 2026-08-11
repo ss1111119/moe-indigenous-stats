@@ -98,6 +98,25 @@
     <div class="grid" id="panels"></div>
   </section>
 
+  <section id="town">
+    <div class="sec-head">
+      <div class="eyebrow">承接端 ・ 單一學年快照</div>
+      <h2>承接不是整個縣市的事，是幾個鄉鎮的事</h2>
+      <p class="note">
+        全國有大專校院的鄉鎮市區只有 <b id="townCount"></b> 個，分布在
+        <b id="townCounties"></b> 個縣市。這一區是 <b id="townYear"></b> 學年的
+        <b>單一快照，不是趨勢</b>——資料來源只提供最新一期。
+        比例欄的分母是該鄉鎮全體大專學生，標<span class="warn">＊</span>者
+        分母不足 1,000 人，一兩個人的增減就會讓比例大幅跳動，不宜與大鄉鎮並列比較。
+        本區範圍不含空大與宗教研修學院，與上方「學校所在地」的
+        A1-6a 口徑一致（實測逐縣市加總完全相符）。
+      </p>
+    </div>
+    <div class="card">
+      <div class="rows" id="townbars"></div>
+    </div>
+  </section>
+
   <section id="stock">
     <div class="sec-head">
       <div class="eyebrow">存量 ・ 基準日不同</div>
@@ -444,6 +463,45 @@ const EDU_COLORS = ["#1b4f8f", "#2a78d6", "#5fa2e6", "#9cc6f0",
       <div class="num hi">${r.ter == null ? "—" : pct1(r.ter)}</div>`;
     hoverable(el, `<b>${r.n}</b>　${G.edu.period}<br>15 歲以上原住民 ${fmt(r.tot)} 人<br>` +
       EDU_LAB.map((l, i) => `${l} ${fmt(r.v[i])}（${r.tot ? (r.v[i] / r.tot * 100).toFixed(1) : "0.0"}%）`).join("<br>"));
+    host.appendChild(el);
+  }
+})();
+
+/* ============ 承接端：鄉鎮市區 ============ */
+(function townBars(){
+  const T = G.town.items;
+  $("#townYear").textContent = G.town.year;   // 學年由資料帶出，不寫死
+  $("#townCount").textContent = T.length;
+  $("#townCounties").textContent = new Set(T.map(t => t.c)).size;
+
+  // 條長用人數（可比），比例另放一欄。用比例畫長度會讓小分母的鄉鎮
+  // 在視覺上壓過真正承接最多人的地方。
+  const max = Math.max(...T.map(t => t.ind));
+  const host = $("#townbars");
+  const cols = "128px 1fr 68px 76px";
+
+  const head = document.createElement("div");
+  head.className = "row hdr";
+  head.style.gridTemplateColumns = cols;
+  head.innerHTML = `<div class="lab">鄉鎮市區</div><div></div>
+    <div class="num">原民生</div><div class="num">占當地</div>`;
+  host.appendChild(head);
+
+  for (const t of T){
+    const el = document.createElement("div");
+    el.className = "row";
+    el.style.gridTemplateColumns = cols;
+    const w = max ? t.ind / max * 100 : 0;
+    const star = t.small ? `<span class="warn">＊</span>` : "";
+    el.innerHTML = `
+      <div class="lab">${t.c}${t.n}</div>
+      <div class="track"><div class="ebar" style="left:0; width:${w}%"></div></div>
+      <div class="num">${fmt(t.ind)}</div>
+      <div class="num hi">${t.sh == null ? "—" : pct1(t.sh * 100)}${star}</div>`;
+    hoverable(el, `<b>${t.c}${t.n}</b>　${G.town.year} 學年<br>` +
+      `大專校院 ${fmt(t.sch)} 所<br>原民生 ${fmt(t.ind)} 人<br>` +
+      `全體學生 ${fmt(t.all)} 人<br>占當地 ${t.sh == null ? "—" : pct1(t.sh * 100)}` +
+      (t.small ? `<br><b>分母不足 1,000 人，比例不穩定</b>` : ""));
     host.appendChild(el);
   }
 })();
