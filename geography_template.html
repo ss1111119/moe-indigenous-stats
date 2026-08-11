@@ -122,26 +122,25 @@
 
   <section id="stream">
     <div class="sec-head">
-      <div class="eyebrow">高中職分流 ・ 十一學年趨勢</div>
-      <h2>進了高中職之後，念的是哪一種</h2>
+      <div class="eyebrow">高中職分流 ・ 與全體對照</div>
+      <h2>普通科比例是在上升，但差距同時在擴大</h2>
       <p class="note">
         上一區看的是「家鄉有沒有下一階的學校」，這一區看的是進去之後念哪一種。
         高中的分流決定升學時的選項，是本站另一頁「原民生念什麼科系」的上游。
         <br>
-        <b id="stFirst"></b> 到 <b id="stLast"></b> 學年，
-        普通科從 <b id="stGenA"></b> 升到 <b id="stGenB"></b>，
-        進修部從 <b id="stCntA"></b> 掉到 <b id="stCntB"></b>，
-        專業群（職業）科幾乎不動。
+        <b id="stFirst"></b> 到 <b id="stLast"></b> 學年，原民生的普通科占比從
+        <b id="stIndA"></b> 升到 <b id="stIndB"></b>——單看這條線像是在改善。
+        但同期全體學生從 <b id="stGenA"></b> 升到 <b id="stGenB"></b>，<b>升得更快</b>。
+        <b>差距因此從 <span id="stGapA"></span> 個百分點擴大到 <span id="stGapB"></span> 個百分點。</b>
         <br>
         <span class="warn">＊</span>三件事：
-        <b>本區沒有一般生對照</b>——本站的分母資料全是大專層級，沒有高中職科別的
-        全體學生數，所以這裡的百分比是<b>原民生之內的組成</b>，
-        不是「跟全體學生比多還少」。
-        <b>總人數的變化不做解讀</b>（<span id="stTot"></span>）——那受少子化、
-        人口結構與學制變動影響，拆不開就不猜。
-        同理，<b>綜合高中的萎縮是全國性的學制趨勢</b>，不是原民生的選擇改變。
+        <b>不解讀差距為何如此</b>——招生制度、學校供給、家庭經濟、填報行為都可能有關，
+        本站沒有能區分它們的資料，只陳述方向與大小。
+        <b>總人數的變化也不解讀</b>（<span id="stTot"></span>）。
+        <b id="stNoCmp"></b> 學年沒有全體端資料（該學年教育部未發布按學程別分的檔案），
+        該列只有原民數字。
         進修部同時帶有就學型態的意涵，與其他四類不完全平行，不宜併成
-        「普通 vs 職業」二分。
+        「普通 vs 職業」二分。兩端同為教育部統計處，數字一致不構成獨立驗證。
       </p>
     </div>
     <div class="card">
@@ -551,52 +550,67 @@ const EDU_COLORS = ["#1b4f8f", "#2a78d6", "#5fa2e6", "#9cc6f0",
   }
 })();
 
-/* ============ 高中職分流：逐年堆疊條 ============ */
-// 藍＝普通科系，暖色＝職業／進修系。取自存量那組色票，同一頁只有一套配色。
-const STREAM_COLORS = ["#2a78d6", "#9cc6f0", "#c96f4a", "#d99a6c", "#b9bec1"];
+/* ============ 高中職分流：與全體對照 ============ */
 (function streams(){
   const S = G.stream, Y = S.years, N = S.names;
-  const idx = n => N.indexOf(n);
-  const at = (n, y) => S.share[idx(n)][Y.indexOf(y)];
-  const f = Y[0], l = Y[Y.length - 1];
+  const gi = N.indexOf("普通科");
+  const cmp = Y.filter((y, i) => S.gen[gi][i] != null);   // 有對照的學年
+  const f = cmp[0], l = cmp[cmp.length - 1];
+  const at = (arr, y) => arr[gi][Y.indexOf(y)];
+
   $("#stFirst").textContent = f;
   $("#stLast").textContent = l;
-  $("#stGenA").textContent = pct1(at("普通科", f));
-  $("#stGenB").textContent = pct1(at("普通科", l));
-  $("#stCntA").textContent = pct1(at("進修部", f));
-  $("#stCntB").textContent = pct1(at("進修部", l));
+  $("#stIndA").textContent = pct1(at(S.ind, f));
+  $("#stIndB").textContent = pct1(at(S.ind, l));
+  $("#stGenA").textContent = pct1(at(S.gen, f));
+  $("#stGenB").textContent = pct1(at(S.gen, l));
+  $("#stGapA").textContent = Math.abs(at(S.gap, f)).toFixed(1);
+  $("#stGapB").textContent = Math.abs(at(S.gap, l)).toFixed(1);
+  $("#stNoCmp").textContent = Y.filter(y => S.gen[gi][Y.indexOf(y)] == null).join("、");
   $("#stTot").textContent =
-    `${f} 學年 ${fmt(S.total[0])} 人、${l} 學年 ${fmt(S.total[Y.length - 1])} 人`;
+    `${Y[0]} 學年 ${fmt(S.total[0])} 人、${Y[Y.length-1]} 學年 ${fmt(S.total[Y.length-1])} 人`;
 
-  $("#stLegend").innerHTML = N.map((n, i) =>
-    `<span><i class="swatch bar" style="background:${STREAM_COLORS[i]}"></i>${n}</span>`).join("");
+  $("#stLegend").innerHTML =
+    `<span><i class="swatch" style="background:var(--ind)"></i>原民生 普通科</span>` +
+    `<span><i class="swatch" style="background:var(--gen)"></i>全體學生 普通科</span>` +
+    `<span class="dashnote">條長為兩者差距；愈長代表原民生的普通科比例落後愈多</span>`;
 
+  // 主軸是差距。⚠️ 不要改成畫原民端的占比——那正是改寫前的問題：
+  // 單看原民端 29.0% → 38.0% 會被讀成「情況在改善」，與資料相反。
+  const gaps = Y.map(y => at(S.gap, y)).filter(v => v != null).map(Math.abs);
+  const max = Math.max(...gaps);
   const host = $("#streamrows");
-  const cols = "64px 1fr 70px";
+  const cols = "64px 1fr 64px 64px 72px";
+
   const head = document.createElement("div");
   head.className = "row hdr";
   head.style.gridTemplateColumns = cols;
-  head.innerHTML = `<div class="lab">學年</div><div></div><div class="num">普通科</div>`;
+  head.innerHTML = `<div class="lab">學年</div><div></div>` +
+    `<div class="num">原民</div><div class="num">全體</div><div class="num">差距</div>`;
   host.appendChild(head);
 
   for (const y of Y){
+    const i = Y.indexOf(y);
+    const ind = S.ind[gi][i], gen = S.gen[gi][i], gap = S.gap[gi][i];
     const el = document.createElement("div");
     el.className = "row";
     el.style.gridTemplateColumns = cols;
-    let acc = 0;
-    // 條長一律是占比。人數只進 tooltip——用人數畫線會讓每一類跟著總量一起掉。
-    const segs = N.map((n, i) => {
-      const w = at(n, y);
-      const s = `<div class="ebar" style="left:${acc}%; width:${w}%; background:${STREAM_COLORS[i]}"></div>`;
-      acc += w; return s;
-    }).join("");
+    const bar = gap == null
+      ? `<span class="dashnote">無全體端資料</span>`
+      : `<div class="track"><div class="ebar" style="left:0; width:${Math.abs(gap) / max * 100}%; background:var(--neg)"></div></div>`;
     el.innerHTML = `
       <div class="lab">${y}</div>
-      <div class="track">${segs}</div>
-      <div class="num hi">${pct1(at("普通科", y))}</div>`;
-    hoverable(el, `<b>${y} 學年</b>　共 ${fmt(S.total[Y.indexOf(y)])} 人<br>` +
-      N.map((n, i) => `${n} ${pct1(at(n, y))}（${fmt(S.n[i][Y.indexOf(y)])} 人）`).join("<br>") +
-      `<br><b>此為原民生之內的組成，無一般生對照</b>`);
+      <div>${bar}</div>
+      <div class="num">${pct1(ind)}</div>
+      <div class="num">${gen == null ? "—" : pct1(gen)}</div>
+      <div class="num hi">${gap == null ? "—" : gap.toFixed(1)}</div>`;
+    hoverable(el, `<b>${y} 學年</b>　原民生共 ${fmt(S.total[i])} 人<br>` +
+      N.map((n, k) => {
+        const a = S.ind[k][i], b = S.gen[k][i];
+        return `${n}　原民 ${pct1(a)}${b == null ? "" : `／全體 ${pct1(b)}`}` +
+               `（${fmt(S.indN[k][i])} 人）`;
+      }).join("<br>") +
+      (gap == null ? `<br><b>該學年無全體端資料</b>` : ""));
     host.appendChild(el);
   }
 })();

@@ -170,39 +170,56 @@ The report page SHALL present the streaming section after the education-ladder s
 and before the township receiving section, and SHALL use shares rather than counts as
 the principal figure.
 
-The page SHALL state that this section has no general-student comparison, so the
-figures describe the composition among indigenous students only. The page SHALL NOT
-describe any stream's share as high or low relative to students generally.
+The page SHALL present the indigenous share alongside the corresponding share for
+students generally, and SHALL make the gap between them the principal figure of the
+section.
 
-The page SHALL state that the change in total student numbers is not interpreted.
+The page SHALL NOT present the indigenous series alone in a way that implies
+improvement, because the indigenous academic-track share rose while the general share
+rose faster, so the gap widened. Any statement about the indigenous trend SHALL be
+accompanied by the general trend for the same period.
+
+For any academic year without a general-student figure, the page SHALL show the
+indigenous figure and mark the comparison as unavailable for that year.
+
+The page SHALL state that the change in total student numbers is not interpreted, and
+SHALL state that no cause is offered for the widening gap.
 
 #### Scenario: Reader opens the streaming section
 
 - **WHEN** the county report page is opened
 - **THEN** the streaming section appears between the ladder and receiving sections,
-  showing each stream's share by academic year
+  showing for each academic year the indigenous share, the general share, and the gap
 
-#### Scenario: No comparison is implied
+#### Scenario: Improvement is not implied from the indigenous series alone
 
 - **WHEN** the streaming section is inspected
-- **THEN** it states that no general-student comparison is available for this section,
-  and contains no claim comparing indigenous shares with those of students generally
+- **THEN** every statement about the indigenous trend is accompanied by the general
+  trend for the same period, and no wording describes the indigenous change as an
+  improvement without that context
 
-#### Scenario: Total change is not attributed
+#### Scenario: A year has no general-student figure
+
+- **WHEN** an academic year has indigenous data but no general-student data
+- **THEN** the indigenous figure is shown and the comparison is marked unavailable for
+  that year
+
+#### Scenario: No cause is attributed
 
 - **WHEN** the streaming section is inspected
 - **THEN** it states that the change in total student numbers is not interpreted, and
-  offers no cause for that change
+  offers no cause for the widening gap
 
 <!-- @trace
-source: senior-secondary-streaming
+source: streaming-general-comparison
 updated: 2026-08-11
 code:
-  - out/senior_stream.csv
+  - fetch_senior.py
   - README.md
+  - build_stream.py
   - docs/geography.html
+  - geography_template.html
   - docs/data/geography.json
   - export_report.py
-  - build_stream.py
-  - geography_template.html
+  - out/senior_stream_compare.csv
 -->

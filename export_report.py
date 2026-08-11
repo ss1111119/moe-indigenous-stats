@@ -214,18 +214,25 @@ def pack_geography() -> dict:
 
     # 高中職分流。⚠️ 送占比與人數，但頁面只畫占比——總人數十一年間降了 15.7%，
     # 用人數畫線會讓每一類一起往下掉，把「普通科比重上升」這個訊息淹掉。
-    st = pd.read_csv(OUT / "senior_stream.csv")
-    st_years = [str(y) for y in sorted(st["學年"].unique())]
+    st = pd.read_csv(OUT / "senior_stream_compare.csv")
+    st["學年"] = st["學年"].astype(str)
+    st_years = sorted(st["學年"].unique(), key=int)
     st_names = ["普通科", "綜合高中", "專業群(職業)科", "實用技能學程", "進修部"]
+
+    def cell(y, n, col):
+        v = st[(st["學年"] == y) & (st["分流"] == n)][col].iloc[0]
+        return None if pd.isna(v) or v == "" else round(float(v), 2)
+
     stream = {
         "years": st_years, "names": st_names,
-        "share": [[round(float(st[(st["學年"].astype(str) == y) &
-                                  (st["分流"] == n)]["占比"].iloc[0]), 2)
-                   for y in st_years] for n in st_names],
-        "n": [[int(st[(st["學年"].astype(str) == y) &
-                      (st["分流"] == n)]["人數"].iloc[0])
-               for y in st_years] for n in st_names],
-        "total": [int(st[st["學年"].astype(str) == y]["人數"].sum()) for y in st_years],
+        # 三組序列並送。⚠️ 缺對照的學年（104）送 null 而不是 0——
+        # 送 0 會在圖上畫成「全體占比是零」，那比不畫更糟。
+        "ind": [[cell(y, n, "原民占比") for y in st_years] for n in st_names],
+        "gen": [[cell(y, n, "全體占比") for y in st_years] for n in st_names],
+        "gap": [[cell(y, n, "差距") for y in st_years] for n in st_names],
+        "indN": [[int(st[(st["學年"] == y) & (st["分流"] == n)]["原民人數"].iloc[0])
+                  for y in st_years] for n in st_names],
+        "total": [int(st[st["學年"] == y]["原民人數"].sum()) for y in st_years],
     }
 
     # 就學階梯。⚠️ 只送鄉鎮市區數與人數，不送任何跨階相除的結果——

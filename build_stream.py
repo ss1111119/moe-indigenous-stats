@@ -30,7 +30,9 @@
 """
 
 import csv
+import io
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -51,6 +53,23 @@ STREAMS = {
 
 ESTABLISHMENT = {"公立", "私立"}
 SEX = {"男", "女"}
+
+# ── 一般生對照（教育部統計處 base3，由 fetch_senior.py 抓下）─────────────────
+SENIOR_DIR = ROOT / "data" / "moe-senior"
+
+# 學程欄名有三種寫法，逐年不同。用集合比對而不是模糊包含——
+# 模糊比對會在來源新增欄位時把它默默當成學程欄。
+PROGRAMME_COLS = {"等級名稱", "學程名稱", "學程(等級)名稱"}
+
+# 類別名稱正規化。105–106 用括號版，107 起改短版。
+# ⚠️ 不可改用「包含『進修』就當進修部」這種模糊比對——來源日後新增類別時
+# 會被默默併進既有類別，那種錯不會報錯，只會讓某一類憑空變大。
+CATEGORY_ALIAS = {
+    "進修部(學校)": "進修部",
+    "專業群科": "專業群(職業)科",
+}
+JUNIOR_HIGH = "附設國中部"   # 是國中不是高中職，一律排除
+EXPECTED = set(STREAMS.values())
 
 if hasattr(sys.stdout, "reconfigure"):  # Windows 主控台預設 cp950，中文會亂碼
     sys.stdout.reconfigure(encoding="utf-8")
@@ -123,6 +142,120 @@ def build(rows: list[dict]) -> list[dict]:
     return out
 
 
+def read_senior(path: Path, year: int) -> "pd.DataFrame":
+    """讀一個學年的 base3。編碼與分隔字元用嗅探，不寫死年份。
+
+    實測：111 學年是 Big5＋Tab，其餘八年 UTF-8＋逗號。這種差異沒有規律，
+    寫死「111 是特例」的話下一年再換一種就會靜默讀錯。
+    """
+    import pandas as pd
+
+    if path.suffix == ".xlsx":
+        return pd.read_excel(path, header=2)
+
+    raw = path.read_bytes()
+    text = None
+    for enc in ("utf-8-sig", "cp950"):
+        try:
+            text = raw.decode(enc)
+            break
+        except UnicodeDecodeError:
+            continue
+    if text is None:
+        raise SystemExit(
+            f"{year} 學年：UTF-8 與 Big5 都無法解碼 {path.name}，未產出任何輸出檔。"
+        )
+
+    sep = "\t" if "\t" in text.splitlines()[0] else ","
+    return pd.read_csv(io.StringIO(text), sep=sep)
+
+
+def senior_general() -> dict[str, dict[str, float]]:
+    """全體高中職學生的學程別人數，回傳 {學年: {分流: 人數}}。"""
+    import pandas as pd
+
+    if not SENIOR_DIR.exists():
+        raise SystemExit(
+            f"找不到 {SENIOR_DIR.relative_to(ROOT)}。"
+            "請先執行：python fetch_senior.py\n"
+            "沒有一般生對照就只能呈現原民端的組成，那會被讀成「情況在改善」。"
+        )
+
+    out: dict[str, dict[str, float]] = {}
+    for path in sorted(SENIOR_DIR.glob("*_base3.*")):
+        year = path.name.split("_")[0]
+        d = read_senior(path, int(year))
+        d.columns = [str(c).strip() for c in d.columns]
+
+        cols = PROGRAMME_COLS & set(d.columns)
+        if len(cols) != 1:
+            raise SystemExit(
+                f"{year} 學年找不到唯一的學程欄（比對 {sorted(PROGRAMME_COLS)}），"
+                f"實際欄位：{list(d.columns)}"
+            )
+        pcol = cols.pop()
+
+        # 學生數一律由年級欄加總，即使檔案自帶「學生數」欄也不用——
+        # 兩種來源用不同欄位會讓同一條時間序列的兩段定義不同。
+        stu = [c for c in d.columns if re.search(r"(年級|延修生).*(男|女)", c)]
+        if len(stu) != 10:
+            raise SystemExit(
+                f"{year} 學年的年級欄有 {len(stu)} 個（應為 10）：{stu}"
+            )
+        for c in stu:
+            d[c] = pd.to_numeric(d[c], errors="coerce").fillna(0)
+
+        d["_n"] = d[stu].sum(axis=1)
+        d["_p"] = d[pcol].astype(str).str.strip().map(
+            lambda v: CATEGORY_ALIAS.get(v, v))
+        d = d[d["_p"] != JUNIOR_HIGH]
+
+        unknown = set(d["_p"]) - EXPECTED
+        if unknown:
+            raise SystemExit(
+                f"{year} 學年出現未知的學程類別 {sorted(unknown)}，未產出任何輸出檔。\n"
+                "來源可能新增了類別——請確認它該歸入哪一類，不要讓它被默默併掉。"
+            )
+
+        out[year] = d.groupby("_p")["_n"].sum().to_dict()
+    return out
+
+
+def compare(ind: list[dict], gen: dict[str, dict[str, float]]) -> list[dict]:
+    """原民端 × 全體端的占比與差距。全體端缺的學年（104）留空。"""
+    rows = []
+    for year in sorted({r["學年"] for r in ind}, key=int):
+        ind_year = [r for r in ind if r["學年"] == year]
+        ind_tot = sum(r["人數"] for r in ind_year)
+        g = gen.get(year)
+        g_tot = sum(g.values()) if g else 0
+
+        if g:
+            share = sum(v / g_tot * 100 for v in g.values())
+            if abs(share - 100) > 0.05:
+                raise SystemExit(f"{year} 學年全體端五類占比加總為 {share:.2f}%")
+
+        for name in STREAMS.values():
+            n = next(r["人數"] for r in ind_year if r["分流"] == name)
+            ip = n / ind_tot * 100 if ind_tot else 0
+            if g:
+                gn = g.get(name, 0)
+                gp = gn / g_tot * 100 if g_tot else 0
+                rows.append({
+                    "學年": year, "分流": name,
+                    "原民人數": n, "原民占比": round(ip, 2),
+                    "全體人數": int(gn), "全體占比": round(gp, 2),
+                    "差距": round(ip - gp, 2),
+                })
+            else:
+                rows.append({
+                    "學年": year, "分流": name,
+                    "原民人數": n, "原民占比": round(ip, 2),
+                    "全體人數": "", "全體占比": "", "差距": "",
+                })
+    return rows
+
+
 def check_ladder(rows: list[dict]) -> None:
     """與就學階梯的高中職數字比對。相符只證明沒讀錯欄位，不是交叉驗證。"""
     if not LADDER.exists():
@@ -175,7 +308,34 @@ def main() -> None:
 
     print(f"\n  總人數 {ta:,} → {tb:,}（本腳本不解讀這個變化，見模組說明）")
     check_ladder(rows)
-    print("  ⚠️ 本輪沒有一般生對照，占比是原民生之內的組成。")
+
+    # ── 一般生對照 ──────────────────────────────────────────────
+    cmp_rows = compare(rows, senior_general())
+    cpath = OUT / "senior_stream_compare.csv"
+    with cpath.open("w", encoding="utf-8-sig", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=[
+            "學年", "分流", "原民人數", "原民占比", "全體人數", "全體占比", "差距"])
+        w.writeheader()
+        w.writerows(cmp_rows)
+
+    have = sorted({r["學年"] for r in cmp_rows if r["全體占比"] != ""}, key=int)
+    print(f"\n  senior_stream_compare.csv  {len(cmp_rows)} 列"
+          f"（{have[0]}–{have[-1]} 有對照，{first} 學年無）")
+
+    g0 = next(r for r in cmp_rows if r["學年"] == have[0] and r["分流"] == "普通科")
+    g1 = next(r for r in cmp_rows if r["學年"] == have[-1] and r["分流"] == "普通科")
+    print(f"\n  {'普通科':<10}{'原民':>8}{'全體':>8}{'差距':>10}")
+    for r in (g0, g1):
+        print(f"  {r['學年'] + ' 學年':<10}{r['原民占比']:>7.1f}%"
+              f"{r['全體占比']:>7.1f}%{r['差距']:>+10.1f}")
+
+    d0, d1 = g0["差距"], g1["差距"]
+    move = "擴大" if abs(d1) > abs(d0) else ("縮小" if abs(d1) < abs(d0) else "持平")
+    print(f"\n  ⚠️ 原民生普通科 {g0['原民占比']:.1f}% → {g1['原民占比']:.1f}% 是上升，"
+          f"但全體 {g0['全體占比']:.1f}% → {g1['全體占比']:.1f}% 升得更快，"
+          f"\n     差距由 {d0:+.1f} 變成 {d1:+.1f} 個百分點——**{move}**。"
+          "\n     只看原民端會得到「情況在改善」這個與資料相反的結論。"
+          "\n     本腳本不解釋差距為何如此，那需要本專案沒有的資料。")
 
 
 if __name__ == "__main__":
