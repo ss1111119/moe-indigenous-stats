@@ -180,6 +180,12 @@ The section's explanatory note SHALL be at most 150 characters, because the page
 explanatory text already totals far more than the sibling page's and further growth
 makes readers skip the caveats that prevent misreading.
 
+The section's heading SHALL name the selected county and state that county's own
+count of townships hosting primary schools and tertiary institutions, so that the
+heading describes what is on screen rather than a county the reader did not choose.
+The heading SHALL be derived from the same assembled figures the section already
+displays, and SHALL NOT require any additional data.
+
 #### Scenario: Reader selects a county
 
 - **WHEN** the reader chooses a county
@@ -201,18 +207,35 @@ makes readers skip the caveats that prevent misreading.
 - **WHEN** the reader selects a county flagged for a tiny denominator
 - **THEN** its ratios are marked and its underlying count is visible alongside them
 
+#### Scenario: The heading follows the selection
+
+- **WHEN** the reader selects a county
+- **THEN** the heading names that county and states its own two township counts
+
+##### Example: headings at academic year 114
+
+| County | Townships with primary → tertiary | Heading                                              |
+| ------ | --------------------------------- | ---------------------------------------------------- |
+| 臺東縣 | 16 → 1                            | 臺東縣 16 個鄉鎮有國小，只有 1 個有大專校院          |
+| 臺北市 | 12 → 9                            | 臺北市 12 個鄉鎮有國小，只有 9 個有大專校院          |
+| 連江縣 | 4 → 0                             | 連江縣 4 個鄉鎮有國小，沒有一個有大專校院            |
+
+#### Scenario: A county hosts no tertiary institution
+
+- **WHEN** the selected county's tertiary township count is zero
+- **THEN** the heading states that none of its townships host a tertiary institution,
+  rather than stating that only zero of them do
+
+#### Scenario: The default selection is unchanged
+
+- **WHEN** the page is first loaded and no county has been chosen
+- **THEN** the heading reads exactly as it did before this change, because the
+  default selection is the same county
+
 <!-- @trace
-source: county-view
+source: county-headline-follows-selection
 updated: 2026-08-12
 code:
-  - docs/geography.html
-  - docs/data/geography.json
   - geography_template.html
-  - export_report.py
-  - out/county_view.csv
-  - README.md
-  - build_county.py
-tests:
-  - tests/test_page_description.py
-  - tests/test_invariants.py
+  - docs/geography.html
 -->
