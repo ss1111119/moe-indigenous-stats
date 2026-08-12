@@ -22,7 +22,7 @@
       臺東縣有八成的原住民大專生離開臺東念書。這一頁沿著那條路徑走一遍：
       他們從哪個縣市來、家鄉有沒有下一階的學校、進了高中職念的是哪一種、
       最後由哪些鄉鎮承接，以及幾十年下來，各縣市的原住民成年人口
-      累積出什麼樣的學歷結構。
+      累積出什麼樣的學歷結構。前段也可以先選定一個縣市，把它自己的處境收在一起看。
     </p>
     <div class="byline">
       <span>資料：原住民學生概況統計 A1-5／A1-6a／A1-6b、各級學校原住民學生概況（edu_A_1_7）、
@@ -84,6 +84,29 @@
         <span class="dashnote">依淨流動排序，負值在上；集中倍數 &gt;1 表示相對超額承接</span>
       </div>
       <div class="rows" id="dumbbell"></div>
+    </div>
+  </section>
+
+  <section id="county">
+    <div class="sec-head">
+      <div class="eyebrow">縣市入口 ・ <b id="cvYear"></b> 學年橫斷面</div>
+      <h2>臺東縣 16 個鄉鎮有國小，只有 1 個有大專校院</h2>
+      <p class="note">
+        選一個縣市，把後面幾區關於它的數字先收在一起。
+        <b>不含高中職分流</b>——原民端的分流資料沒有縣市分項。
+        出生戶籍地不足 200 人的縣市，比率標<span class="warn">＊</span>，不可當真。
+      </p>
+    </div>
+    <div class="card">
+      <div class="bar">
+        <span class="lbl">縣市</span>
+        <div class="seg" id="countyseg" role="group" aria-label="選擇縣市，只套用到本區塊"></div>
+      </div>
+      <div class="kpis" id="countykpis"></div>
+      <div class="legend" style="margin:18px 0 10px">
+        <span class="dashnote">條長相對於該縣市有國小的鄉鎮市區數；四階是同一時點的橫斷面，不可相除</span>
+      </div>
+      <div class="rows" id="countyladder"></div>
     </div>
   </section>
 
@@ -616,6 +639,74 @@ const EDU_COLORS = ["#1b4f8f", "#2a78d6", "#5fa2e6", "#9cc6f0",
       (gap == null ? `<br><b>該學年無全體端資料</b>` : ""));
     host.appendChild(el);
   }
+})();
+
+/* ============ 縣市入口 ============ */
+(function countyView(){
+  const C = G.county.items;
+  // 與 build_county.py 的 LEVELS 同序；steps 依同一順序送出。
+  const LV = ["國小", "國中", "高中職", "大專"];
+  $("#cvYear").textContent = G.county.year;
+
+  // 這個選擇器只管本區塊，不動上方的等級別與學年度——本區是單一學年的橫斷面。
+  const seg = $("#countyseg");
+  let pick = Math.max(0, C.findIndex(c => c.n === "臺東縣"));
+  seg.innerHTML = C.map((c, i) =>
+    `<button type="button" data-i="${i}" aria-pressed="${i === pick}">${c.n}</button>`).join("");
+  seg.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    pick = +b.dataset.i;
+    seg.querySelectorAll("button").forEach(x =>
+      x.setAttribute("aria-pressed", String(+x.dataset.i === pick)));
+    draw();
+  });
+
+  const host = $("#countyladder");
+  const cols = "72px 1fr 92px";
+
+  function draw(){
+    const c = C[pick];
+    // ⚠️ 標記的是**比率**不是人數，而且標了之後分母一定要看得到——
+    // 「0.0%＊」自己不會告訴讀者那是 4 個人算出來的。
+    const star = c.small ? `<span class="warn">＊</span>` : "";
+    const cells = [
+      ["淨流動", `${c.net > 0 ? "+" : ""}${fmt(c.net)} 人`,
+       `出生戶籍地 ${fmt(c.birth)} 人　學校所在地 ${fmt(c.school)} 人`],
+      ["就學戶籍比", pct1(c.ratio) + star,
+       `分母為出生戶籍地 <b>${fmt(c.birth)}</b> 人` +
+       (c.small ? "　<b>不足 200 人，此比率不可當真</b>" : "")],
+      ["承接", `${c.recT} 個鄉鎮`,
+       c.recT ? `原民生 <b>${fmt(c.recN)}</b> 人` : "該縣市沒有大專校院"],
+      ["存量 專科以上", pct1(c.std) + star,
+       `原始 ${pct1(c.crude)} → 年齡標準化 ${pct1(c.std)}`],
+    ];
+    $("#countykpis").innerHTML = cells.map(([k, v, d]) =>
+      `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+
+    // 條長以該縣市「有國小的鄉鎮數」為 100%。本區要看的是同一個縣市內部
+    // 逐階減少的形狀，不是跨縣市比大小——跨縣市的排行榜在下面幾區。
+    const ref = c.steps[0];
+    host.innerHTML = "";
+    const head = document.createElement("div");
+    head.className = "row hdr";
+    head.style.gridTemplateColumns = cols;
+    head.innerHTML = `<div class="lab">學制</div><div></div><div class="num">鄉鎮市區</div>`;
+    host.appendChild(head);
+
+    c.steps.forEach((v, i) => {
+      const el = document.createElement("div");
+      el.className = "row";
+      el.style.gridTemplateColumns = cols;
+      el.innerHTML = `
+        <div class="lab">${LV[i]}</div>
+        <div class="track"><div class="ebar" style="left:0; width:${ref ? v / ref * 100 : 0}%"></div></div>
+        <div class="num hi">${v}</div>`;
+      hoverable(el, `<b>${c.n}</b>　${G.county.year} 學年<br>` +
+        `有${LV[i]}的鄉鎮市區 ${v} 個（該縣市有國小的 ${ref} 個）`);
+      host.appendChild(el);
+    });
+  }
+  draw();
 })();
 
 /* ============ 就學階梯 ============ */

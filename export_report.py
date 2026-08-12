@@ -191,6 +191,36 @@ def pack_geography() -> dict:
     } for r in town.itertuples()]
     towns.sort(key=lambda t: -t["ind"])
 
+    # 縣市入口。⚠️ 這一份是既有四份輸出的彙整（見 build_county.py），不另行計算——
+    # 入口區塊的數字與後面各區必須是同一批數字，否則讀者會以為那是兩份資料。
+    # 學年不寫死：county_view.csv 沒有學年欄，改以「出生戶籍地逐縣市與 geography.csv
+    # 相符」反推是哪一年。對不上就中止——那表示 build_county.py 的 YEAR 已經落後，
+    # 而那種錯不會報錯，只會讓頁面標著今年的學年顯示去年的數字。
+    cv = pd.read_csv(OUT / "county_view.csv")
+    cv_year = None
+    for y in reversed(years):
+        ref = g[(g["學年度"] == y) & (g["等級別"] == "總計")].set_index("縣市")
+        if len(ref) == len(cv) and all(
+                int(ref.loc[r.縣市, "出生戶籍地在學數"]) == int(r.出生戶籍地)
+                for r in cv.itertuples()):
+            cv_year = y
+            break
+    if cv_year is None:
+        raise SystemExit(
+            "county_view.csv 的出生戶籍地對不上 geography.csv 的任何一個學年。\n"
+            "請重跑 python build_county.py（並確認其 YEAR 與最新資料一致）。")
+
+    county = {"year": str(cv_year), "items": [{
+        "n": r.縣市,
+        "birth": int(r.出生戶籍地), "school": int(r.學校所在地),
+        "net": int(r.淨流動), "ratio": float(r.就學戶籍比),
+        "steps": [int(r.有國小的鄉鎮數), int(r.有國中的鄉鎮數),
+                  int(r.有高中職的鄉鎮數), int(r.有大專的鄉鎮數)],
+        "recT": int(r.承接鄉鎮數), "recN": int(r.承接原民生),
+        "crude": float(r.原始專科以上占比), "std": float(r.年齡標準化占比),
+        "small": r.小分母 == "是",
+    } for r in cv.itertuples()]}
+
     # 年齡分解與標準化。⚠️ 原始占比一併送出且不被取代——兩者回答不同問題，
     # 而且既有區塊用的就是原始占比，只送標準化會讓同一頁兩個數字對不上。
     aa = pd.read_csv(OUT / "attainment_by_age.csv")
@@ -258,6 +288,7 @@ def pack_geography() -> dict:
             "stdSpread": round(float(ast["年齡標準化占比"].max()
                                      - ast["年齡標準化占比"].min()), 1),
         },
+        "county": county,
         "ladder": {"year": str(lad["學年"].iloc[0]), "total": 368, "items": ladder},
         "stream": stream,
         "town": {"year": town_year, "items": towns},

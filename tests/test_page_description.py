@@ -29,7 +29,7 @@ CN_NUM = {"一": 1, "兩": 2, "二": 2, "三": 3, "四": 4, "五": 5,
 # 新增區塊時請一併確認開場白與 byline 是否仍如實描述這一頁，再更新這裡。
 SECTIONS = {
     "geography_template.html": [
-        "overview", "flow", "trend", "ladder", "stream",
+        "overview", "flow", "county", "trend", "ladder", "stream",
         "town", "stock", "agedec", "link", "caveats",
     ],
 }

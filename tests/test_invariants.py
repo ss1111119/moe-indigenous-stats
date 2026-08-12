@@ -46,6 +46,10 @@ LADDER = {"國小": 367, "國中": 357, "高中職": 206, "大專": 87}
 GAP_FIRST = ("105", -11.56)
 GAP_LAST = ("114", -13.69)
 
+# 縣市視角裡比率被標記為不穩定的縣市（出生戶籍地在學數 < 200）。
+# 釘死名單而不是只釘個數：個數對了但換了一個縣市，是更難發現的錯。
+COUNTY_FLAGGED = ["雲林縣", "嘉義市", "澎湖縣", "金門縣", "連江縣"]
+
 # 形狀由資料決定的輸出，其列數。
 ROWS = {
     "receiving_township.csv": 87,      # 有大專校院的鄉鎮市區
@@ -53,6 +57,7 @@ ROWS = {
     "attainment_by_age.csv": 132,      # 22 縣市 × 6 年齡組
     "senior_stream.csv": 55,           # 11 學年 × 5 分流
     "senior_stream_compare.csv": 55,
+    "county_view.csv": 22,             # 一列一個縣市
 }
 
 HINT = "（若為新學年資料，請先確認數字合理後再更新本檔的常數，不要直接改成通過）"
@@ -143,6 +148,58 @@ def test_streaming_gap_widened():
     assert abs(gaps[GAP_LAST[0]]) > abs(gaps[GAP_FIRST[0]]), (
         "差距應為擴大——若真的變成縮小，那是重要發現，"
         "請先確認資料再更新本測試與頁面敘事")
+
+
+# ── 縣市視角 ────────────────────────────────────────────────────────────
+def test_county_receiving_matches_township_output():
+    """承接兩欄 = 該縣市在鄉鎮承接輸出的列數與人數合計。
+
+    這是彙整最容易靜默出錯的地方：連江縣在承接輸出裡沒有列，若彙整時漏了
+    「沒有列就填 0」，該縣市會整列消失或變成缺值，而兩者都不會報錯。
+    """
+    cv = read("county_view.csv")
+    town = read("receiving_township.csv")
+    counts = town.groupby("縣市").size()
+    sums = town.groupby("縣市")["原住民學生數"].sum()
+
+    for r in cv.itertuples():
+        want_t = int(counts.get(r.縣市, 0))
+        want_n = int(sums.get(r.縣市, 0))
+        assert int(r.承接鄉鎮數) == want_t, (
+            f"{r.縣市} 的承接鄉鎮數為 {r.承接鄉鎮數}，"
+            f"但承接輸出裡有 {want_t} 列 {HINT}")
+        assert int(r.承接原民生) == want_n, (
+            f"{r.縣市} 的承接原民生為 {r.承接原民生:,}，"
+            f"但承接輸出合計為 {want_n:,} {HINT}")
+
+
+def test_county_steps_do_not_increase():
+    """四階鄉鎮數不得隨學制上升。
+
+    一個鄉鎮若有大專，它在國小那一階也會被算到，所以升是不可能的。
+    ⚠️ 這裡只要求不上升不要求嚴格遞減——小縣市持平是真的（宜蘭國小 12、國中 12）。
+    """
+    cv = read("county_view.csv")
+    cols = ["有國小的鄉鎮數", "有國中的鄉鎮數", "有高中職的鄉鎮數", "有大專的鄉鎮數"]
+    for r in cv.itertuples():
+        seq = [int(getattr(r, c)) for c in cols]
+        assert seq == sorted(seq, reverse=True), (
+            f"{r.縣市} 的四階鄉鎮數往上升：{seq}——"
+            f"這表示彙整讀錯了縣市或學制 {HINT}")
+
+
+def test_county_small_denominator_flags():
+    """被標記的縣市恰為那 5 個，且標記與 200 人門檻一致。"""
+    cv = read("county_view.csv")
+    got = list(cv[cv["小分母"] == "是"]["縣市"])
+    assert sorted(got) == sorted(COUNTY_FLAGGED), (
+        f"被標記的縣市為 {got}，應為 {COUNTY_FLAGGED} {HINT}")
+
+    for r in cv.itertuples():
+        flagged = r.小分母 == "是"
+        assert flagged == (int(r.出生戶籍地) < 200), (
+            f"{r.縣市} 出生戶籍地 {r.出生戶籍地} 人，標記為 {flagged!r}，"
+            "與 200 人門檻不一致")
 
 
 # ── 形狀與占比 ──────────────────────────────────────────────────────────
